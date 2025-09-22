@@ -110,8 +110,8 @@ class VerificationService {
             // Format request pentru smsadvert.ro API
             const requestData = {
                 phone: formattedPhone,
-                shortTextMessage: message, // Folosesc numele din eroarea de validare
-                sender: this.smsConfig.sender
+                shortTextMessage: message,
+                sendAsShort: true  // Pentru trimitere prin rețeaua smsadvert.ro
             };
 
             console.log(`📞 Trimit la: ${formattedPhone}`);
@@ -119,7 +119,7 @@ class VerificationService {
 
             const response = await axios.post(this.smsConfig.apiUrl, requestData, {
                 headers: {
-                    'Authorization': `Bearer ${this.smsConfig.token}`,
+                    'Authorization': this.smsConfig.token,  // Fără prefix Bearer
                     'Content-Type': 'application/json'
                 },
                 timeout: 10000 // 10 secunde timeout
@@ -209,7 +209,7 @@ class VerificationService {
     async checkSMSQueueStatus() {
         try {
             console.log('🔍 Verificare status coadă SMS...');
-            
+
             const response = await axios.get('https://www.smsadvert.ro/api/sms/queue', {
                 headers: {
                     'Authorization': `Bearer ${this.smsConfig.token}`,
@@ -219,7 +219,7 @@ class VerificationService {
             });
 
             console.log('📊 Status coadă SMS:', response.data);
-            
+
             if (response.data && response.data.queueCount > 0) {
                 console.log(`⏳ ${response.data.queueCount} mesaje în coadă`);
                 return response.data;
@@ -227,7 +227,7 @@ class VerificationService {
                 console.log('✅ Coada SMS este goală');
                 return { queueCount: 0 };
             }
-            
+
         } catch (error) {
             console.error('❌ Eroare verificare coadă SMS:', error.response?.data || error.message);
             return null;
@@ -238,7 +238,7 @@ class VerificationService {
     async processSMSQueue() {
         try {
             console.log('🚀 Procesare forțată coadă SMS...');
-            
+
             // Încearcă endpoint-ul de procesare
             const response = await axios.post('https://www.smsadvert.ro/api/sms/send-queue', {}, {
                 headers: {
@@ -252,7 +252,7 @@ class VerificationService {
             return response.data;
         } catch (error) {
             console.error('❌ Eroare procesare coadă SMS:', error.response?.data || error.message);
-            
+
             // Încearcă cu alt endpoint
             try {
                 console.log('🔄 Reîncerc cu alt endpoint...');
@@ -263,7 +263,7 @@ class VerificationService {
                     },
                     timeout: 10000
                 });
-                
+
                 console.log('✅ Coadă curățată cu succes:', retryResponse.data);
                 return retryResponse.data;
             } catch (retryError) {
@@ -277,7 +277,7 @@ class VerificationService {
     async clearSMSQueue() {
         try {
             console.log('🧹 Ștergere completă coadă SMS...');
-            
+
             const response = await axios.delete('https://www.smsadvert.ro/api/sms/queue', {
                 headers: {
                     'Authorization': `Bearer ${this.smsConfig.token}`,

@@ -1,14 +1,21 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface User {
+    id: number;
     email: string;
     name: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    phone: string;
+    isVerified: boolean;
 }
 
 interface AuthContextType {
     user: User | null;
+    token: string | null;
     isAuthenticated: boolean;
-    login: (userData: User) => void;
+    login: (userData: User, authToken: string) => void;
     logout: () => void;
     isLoading: boolean;
 }
@@ -21,6 +28,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
+    const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     // Verificăm localStorage la încărcarea aplicației
@@ -28,13 +36,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const checkAuthStatus = () => {
             try {
                 const savedUser = localStorage.getItem('user');
-                if (savedUser) {
+                const savedToken = localStorage.getItem('token');
+                if (savedUser && savedToken) {
                     const userData = JSON.parse(savedUser);
                     setUser(userData);
+                    setToken(savedToken);
                 }
             } catch (error) {
                 console.error('Eroare la citirea datelor din localStorage:', error);
-                localStorage.removeItem('user'); // Ștergem datele corupte
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
             } finally {
                 setIsLoading(false);
             }
@@ -43,10 +54,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         checkAuthStatus();
     }, []);
 
-    const login = (userData: User) => {
+    const login = (userData: User, authToken: string) => {
         setUser(userData);
+        setToken(authToken);
         try {
             localStorage.setItem('user', JSON.stringify(userData));
+            localStorage.setItem('token', authToken);
         } catch (error) {
             console.error('Eroare la salvarea în localStorage:', error);
         }
@@ -54,8 +67,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const logout = () => {
         setUser(null);
+        setToken(null);
         try {
             localStorage.removeItem('user');
+            localStorage.removeItem('token');
         } catch (error) {
             console.error('Eroare la ștergerea din localStorage:', error);
         }
@@ -63,7 +78,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const value: AuthContextType = {
         user,
-        isAuthenticated: !!user,
+        token,
+        isAuthenticated: !!user && !!token,
         login,
         logout,
         isLoading

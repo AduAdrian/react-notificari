@@ -1,0 +1,492 @@
+const express = require('express');
+const router = express.Router();
+const authUtils = require('../utils/auth');
+const database = require('../utils/database');
+
+// Middleware pentru verificarea adminului pe toate rutele
+router.use(authUtils.authenticateToken.bind(authUtils));
+router.use(authUtils.requireAdmin.bind(authUtils));
+
+// GET /admin/dashboard - Dashboard principal admin
+router.get('/dashboard', (req, res) => {
+    try {
+        const db = database.read();
+
+        const stats = {
+            totalUsers: db.users.length,
+            activeUsers: db.users.filter(u => u.isActive).length,
+            verifiedUsers: db.users.filter(u => u.isVerified).length,
+            pendingUsers: db.pendingUsers.length,
+            adminUsers: db.users.filter(u => u.role === 'admin').length,
+            totalClients: (db.clients || []).length,
+            totalVehicles: (db.vehicles || []).length
+        };
+
+        res.json({
+            success: true,
+            stats,
+            message: 'Dashboard admin încărcat cu succes'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Eroare la încărcarea dashboard-ului admin'
+        });
+    }
+});
+
+// GET /admin/users - Lista tuturor utilizatorilor
+router.get('/users', (req, res) => {
+    try {
+        const db = database.read();
+
+        const users = db.users.map(user => ({
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            isActive: user.isActive,
+            isVerified: user.isVerified,
+            createdAt: user.createdAt,
+            lastLogin: user.lastLogin
+        }));
+
+        res.json({
+            success: true,
+            users,
+            total: users.length
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Eroare la încărcarea utilizatorilor'
+        });
+    }
+});
+
+// POST /admin/vehicles - Adaugă un vehicul nou
+router.post('/vehicles', (req, res) => {
+    try {
+        const { nrInmatriculare, nrTelefon, valabilitate, optional } = req.body;
+
+        // Validări
+        if (!nrInmatriculare || !nrTelefon || !valabilitate) {
+            return res.status(400).json({
+                success: false,
+                message: 'Numărul de înmatriculare, numărul de telefon și valabilitatea sunt obligatorii'
+            });
+        }
+
+        // Calculează data de expirare
+        const today = new Date();
+        let expirationDate;
+
+        switch (valabilitate) {
+            case 'today':
+                expirationDate = new Date(today);
+                break;
+            case '6months':
+                expirationDate = new Date(today);
+                expirationDate.setMonth(expirationDate.getMonth() + 6);
+                break;
+            case '1year':
+                expirationDate = new Date(today);
+                expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+                break;
+            case '2years':
+                expirationDate = new Date(today);
+                expirationDate.setFullYear(expirationDate.getFullYear() + 2);
+                break;
+            default:
+                return res.status(400).json({
+                    success: false,
+                    message: 'Valabilitate invalidă'
+                });
+        }
+
+        const db = database.read();
+
+        // Verifică dacă vehiculul există deja
+        if (!db.vehicles) {
+            db.vehicles = [];
+        }
+
+        const existingVehicle = db.vehicles.find(v => v.nrInmatriculare === nrInmatriculare);
+        if (existingVehicle) {
+            return res.status(409).json({
+                success: false,
+                message: 'Un vehicul cu acest număr de înmatriculare există deja'
+            });
+        }
+
+        // Adaugă vehiculul
+        const newVehicle = {
+            id: Date.now(),
+            nrInmatriculare: nrInmatriculare.toUpperCase(),
+            nrTelefon: nrTelefon,
+            valabilitate: valabilitate,
+            expirationDate: expirationDate.toISOString(),
+            optional: optional || '',
+            createdAt: new Date().toISOString(),
+            createdBy: req.user.email,
+            isActive: true
+        };
+
+        db.vehicles.push(newVehicle);
+        database.write(db);
+
+        res.status(201).json({
+            success: true,
+            vehicle: newVehicle,
+            message: 'Vehicul adăugat cu succes'
+        });
+
+    } catch (error) {
+        console.error('Eroare la adăugarea vehiculului:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eroare la adăugarea vehiculului'
+        });
+    }
+});
+
+// GET /admin/vehicles - Lista vehiculelor
+router.get('/vehicles', (req, res) => {
+    try {
+        const db = database.read();
+
+        const vehicles = db.vehicles || [];
+
+        res.json({
+            success: true,
+            vehicles,
+            total: vehicles.length
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Eroare la încărcarea vehiculelor'
+        });
+    }
+});
+
+// PUT /admin/vehicles/:id - Actualizează un vehicul
+router.put('/vehicles/:id', (req, res) => {
+    try {
+        const vehicleId = parseInt(req.params.id);
+        const { nrInmatriculare, nrTelefon, valabilitate, optional } = req.body;
+
+        const db = database.read();
+
+        if (!db.vehicles) {
+            db.vehicles = [];
+        }
+
+        const vehicleIndex = db.vehicles.findIndex(v => v.id === vehicleId);
+        if (vehicleIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                message: 'Vehicul nu a fost găsit'
+            });
+        }
+
+        // Calculează noua dată de expirare dacă s-a schimbat
+        let expirationDate = db.vehicles[vehicleIndex].expirationDate;
+        if (valabilitate && valabilitate !== db.vehicles[vehicleIndex].valabilitate) {
+            const today = new Date();
+            switch (valabilitate) {
+                case 'today':
+                    expirationDate = new Date(today).toISOString();
+                    break;
+                case '6months':
+                    const sixMonths = new Date(today);
+                    sixMonths.setMonth(sixMonths.getMonth() + 6);
+                    expirationDate = sixMonths.toISOString();
+                    break;
+                case '1year':
+                    const oneYear = new Date(today);
+                    oneYear.setFullYear(oneYear.getFullYear() + 1);
+                    expirationDate = oneYear.toISOString();
+                    break;
+                case '2years':
+                    const twoYears = new Date(today);
+                    twoYears.setFullYear(twoYears.getFullYear() + 2);
+                    expirationDate = twoYears.toISOString();
+                    break;
+            }
+        }
+
+        // Actualizează vehiculul
+        db.vehicles[vehicleIndex] = {
+            ...db.vehicles[vehicleIndex],
+            nrInmatriculare: nrInmatriculare ? nrInmatriculare.toUpperCase() : db.vehicles[vehicleIndex].nrInmatriculare,
+            nrTelefon: nrTelefon || db.vehicles[vehicleIndex].nrTelefon,
+            valabilitate: valabilitate || db.vehicles[vehicleIndex].valabilitate,
+            expirationDate: expirationDate,
+            optional: optional !== undefined ? optional : db.vehicles[vehicleIndex].optional,
+            updatedAt: new Date().toISOString(),
+            updatedBy: req.user.email
+        };
+
+        database.write(db);
+
+        res.json({
+            success: true,
+            vehicle: db.vehicles[vehicleIndex],
+            message: 'Vehicul actualizat cu succes'
+        });
+
+    } catch (error) {
+        console.error('Eroare la actualizarea vehiculului:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eroare la actualizarea vehiculului'
+        });
+    }
+});
+
+// DELETE /admin/vehicles/:id - Șterge un vehicul
+router.delete('/vehicles/:id', (req, res) => {
+    try {
+        const vehicleId = parseInt(req.params.id);
+
+        const db = database.read();
+
+        if (!db.vehicles) {
+            db.vehicles = [];
+        }
+
+        const vehicleIndex = db.vehicles.findIndex(v => v.id === vehicleId);
+        if (vehicleIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                message: 'Vehicul nu a fost găsit'
+            });
+        }
+
+        const deletedVehicle = db.vehicles.splice(vehicleIndex, 1)[0];
+        database.write(db);
+
+        res.json({
+            success: true,
+            message: 'Vehicul șters cu succes',
+            deletedVehicle
+        });
+
+    } catch (error) {
+        console.error('Eroare la ștergerea vehiculului:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eroare la ștergerea vehiculului'
+        });
+    }
+});
+
+// POST /admin/clients - Adaugă un client nou
+router.post('/clients', (req, res) => {
+    try {
+        const { nrInmatriculare, nrTelefon, valabilitate, optional } = req.body;
+
+        // Validări de bază
+        if (!nrInmatriculare || !nrTelefon || !valabilitate) {
+            return res.status(400).json({
+                success: false,
+                message: 'Numărul de înmatriculare, telefon și validitatea sunt obligatorii'
+            });
+        }
+
+        const db = database.read();
+
+        // Inițializează array-ul de clienți dacă nu există
+        if (!db.clients) {
+            db.clients = [];
+        }
+
+        // Verifică dacă există deja un client cu același număr de înmatriculare
+        const existingClient = db.clients.find(c => c.nrInmatriculare === nrInmatriculare);
+        if (existingClient) {
+            return res.status(409).json({
+                success: false,
+                message: 'Există deja un client cu acest număr de înmatriculare'
+            });
+        }
+
+        // Calculează data de expirare
+        let expirationDate = new Date();
+        switch (valabilitate) {
+            case '6months':
+                expirationDate.setMonth(expirationDate.getMonth() + 6);
+                break;
+            case '1year':
+                expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+                break;
+            case '2years':
+                expirationDate.setFullYear(expirationDate.getFullYear() + 2);
+                break;
+            case 'today':
+            default:
+                // Păstrează data de azi
+                break;
+        }
+
+        const newClient = {
+            id: Date.now(),
+            nrInmatriculare,
+            nrTelefon,
+            valabilitate,
+            optional: optional || '',
+            expirationDate: expirationDate.toISOString(),
+            createdAt: new Date().toISOString(),
+            createdBy: req.user.email
+        };
+
+        db.clients.push(newClient);
+        database.write(db);
+
+        res.status(201).json({
+            success: true,
+            message: 'Client adăugat cu succes',
+            client: newClient
+        });
+
+    } catch (error) {
+        console.error('Eroare la adăugarea clientului:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eroare la adăugarea clientului'
+        });
+    }
+});
+
+// GET /admin/clients - Lista clienților
+router.get('/clients', (req, res) => {
+    try {
+        const db = database.read();
+        const clients = db.clients || [];
+
+        res.json({
+            success: true,
+            clients,
+            total: clients.length
+        });
+    } catch (error) {
+        console.error('Eroare la citirea clienților:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eroare la încărcarea clienților'
+        });
+    }
+});
+
+// PUT /admin/clients/:id - Actualizează un client
+router.put('/clients/:id', (req, res) => {
+    try {
+        const clientId = parseInt(req.params.id);
+        const { nrInmatriculare, nrTelefon, valabilitate, optional } = req.body;
+
+        const db = database.read();
+
+        if (!db.clients) {
+            db.clients = [];
+        }
+
+        const clientIndex = db.clients.findIndex(c => c.id === clientId);
+
+        if (clientIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                message: 'Clientul nu a fost găsit'
+            });
+        }
+
+        // Recalculează data de expirare dacă s-a schimbat validitatea
+        let expirationDate = db.clients[clientIndex].expirationDate;
+        if (valabilitate && valabilitate !== db.clients[clientIndex].valabilitate) {
+            expirationDate = new Date();
+            switch (valabilitate) {
+                case '6months':
+                    expirationDate.setMonth(expirationDate.getMonth() + 6);
+                    break;
+                case '1year':
+                    expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+                    break;
+                case '2years':
+                    expirationDate.setFullYear(expirationDate.getFullYear() + 2);
+                    break;
+                case 'today':
+                default:
+                    break;
+            }
+            expirationDate = expirationDate.toISOString();
+        }
+
+        // Actualizează clientul
+        db.clients[clientIndex] = {
+            ...db.clients[clientIndex],
+            nrInmatriculare: nrInmatriculare || db.clients[clientIndex].nrInmatriculare,
+            nrTelefon: nrTelefon || db.clients[clientIndex].nrTelefon,
+            valabilitate: valabilitate || db.clients[clientIndex].valabilitate,
+            optional: optional !== undefined ? optional : db.clients[clientIndex].optional,
+            expirationDate,
+            updatedAt: new Date().toISOString(),
+            updatedBy: req.user.email
+        };
+
+        database.write(db);
+
+        res.json({
+            success: true,
+            message: 'Client actualizat cu succes',
+            client: db.clients[clientIndex]
+        });
+
+    } catch (error) {
+        console.error('Eroare la actualizarea clientului:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eroare la actualizarea clientului'
+        });
+    }
+});
+
+// DELETE /admin/clients/:id - Șterge un client
+router.delete('/clients/:id', (req, res) => {
+    try {
+        const clientId = parseInt(req.params.id);
+        const db = database.read();
+
+        if (!db.clients) {
+            db.clients = [];
+        }
+
+        const clientIndex = db.clients.findIndex(c => c.id === clientId);
+
+        if (clientIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                message: 'Clientul nu a fost găsit'
+            });
+        }
+
+        const deletedClient = db.clients[clientIndex];
+        db.clients.splice(clientIndex, 1);
+        database.write(db);
+
+        res.json({
+            success: true,
+            message: 'Client șters cu succes',
+            deletedClient
+        });
+
+    } catch (error) {
+        console.error('Eroare la ștergerea clientului:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eroare la ștergerea clientului'
+        });
+    }
+});
+
+module.exports = router;

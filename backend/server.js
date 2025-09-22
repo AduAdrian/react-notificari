@@ -40,7 +40,10 @@ app.use((req, res, next) => {
 
 // Routes
 const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 // SMS Queue management endpoints
 app.get('/api/sms/queue/status', async (req, res) => {

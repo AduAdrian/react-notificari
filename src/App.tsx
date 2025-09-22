@@ -38,7 +38,7 @@ const AppContent: React.FC = () => {
   if (currentView === 'register') {
     return (
       <Register
-        onRegisterSuccess={login}
+        onRegisterSuccess={(userData, token) => login(userData, token)}
         onBackToLogin={() => setCurrentView('login')}
         onNeedVerification={(email: string, method: 'email' | 'sms') => {
           setVerificationData({ email, method });
@@ -53,7 +53,7 @@ const AppContent: React.FC = () => {
       <VerificationCode
         email={verificationData.email}
         method={verificationData.method}
-        onVerificationSuccess={login}
+        onVerificationSuccess={(userData, token) => login(userData, token)}
         onBackToRegister={() => setCurrentView('register')}
       />
     );
@@ -61,7 +61,7 @@ const AppContent: React.FC = () => {
 
   return (
     <Login
-      onLogin={login}
+      onLogin={(userData, token) => login(userData, token)}
       onShowRegister={() => setCurrentView('register')}
     />
   );
@@ -86,7 +86,7 @@ function App() {
 // Wrapper pentru OAuth Callback
 const OAuthCallbackWrapper: React.FC = () => {
   const { login } = useAuth();
-  return <OAuthCallback onLogin={login} />;
+  return <OAuthCallback onLogin={(userData, token) => login(userData, token)} />;
 };
 
 // Componentă pentru rute protejate
@@ -106,3 +106,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 export default App;
+
+
+
+

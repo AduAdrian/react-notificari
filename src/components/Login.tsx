@@ -7,7 +7,7 @@ interface LoginFormData {
 }
 
 interface LoginProps {
-    onLogin: (userData: { email: string; name: string }) => void;
+    onLogin: (userData: { email: string; name: string }, token: string) => void;
     onShowRegister: () => void;
 }
 
@@ -87,7 +87,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onShowRegister }) => {
                     name: data.user.name
                 };
 
-                onLogin(userData);
+                onLogin(userData, data.token);
             } else {
                 // Afișăm eroarea de la backend
                 setErrors({
@@ -203,3 +203,4 @@ const Login: React.FC<LoginProps> = ({ onLogin, onShowRegister }) => {
 };
 
 export default Login;
+
