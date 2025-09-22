@@ -1,11 +1,13 @@
-require('dotenv').config();
+// Validare configurație înaintea încărcării aplicației
+const { config, isEmailConfigured, isSMSConfigured } = require('./config/env-validator');
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = config.PORT;
 
 // Middleware
 app.use(cors({
@@ -29,9 +31,15 @@ app.use('/api/auth', authRoutes);
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 
-        message: 'Backend func?ioneaza perfect!',
+        message: 'Backend funcționează perfect!',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+        uptime: process.uptime(),
+        configuration: {
+            environment: config.NODE_ENV,
+            emailConfigured: isEmailConfigured,
+            smsConfigured: isSMSConfigured,
+            jwtConfigured: !!config.JWT_SECRET
+        }
     });
 });
 
@@ -71,15 +79,27 @@ app.use((req, res) => {
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 +------------------------------------------------------+
-�         BACKEND SERVER PORNIT CU SUCCES!            �
-�------------------------------------------------------�
-�  ?? Server URL: http://localhost:${PORT}              �
-�  ?? Email SMTP: Configurat ?i func?ional            �
-�  ?? SMS API: Configurat ?i func?ional               �
-�  ?? JWT: Activ                                      �
-�  ?? Environment: ${process.env.NODE_ENV || 'development'}                     �
+│         BACKEND SERVER PORNIT CU SUCCES!            │
+│------------------------------------------------------│
+│  🌐 Server URL: http://localhost:${PORT}              │
+│  📧 Email SMTP: ${isEmailConfigured ? 'Configurat și funcțional' : 'Nu este configurat (dev mode)'}            │
+│  📱 SMS API: ${isSMSConfigured ? 'Configurat și funcțional' : 'Nu este configurat (dev mode)'}               │
+│  🔐 JWT: ${config.JWT_SECRET ? 'Activ' : 'Inactiv'}                                      │
+│  🛠️  Environment: ${config.NODE_ENV}                     │
 +------------------------------------------------------+
     `);
+    
+    // Afișează avertismente dacă serviciile nu sunt configurate
+    if (!isEmailConfigured || !isSMSConfigured) {
+        console.log('\n⚠️  AVERTISMENT: Unele servicii nu sunt configurate complet:');
+        if (!isEmailConfigured) {
+            console.log('   • Email SMTP: Configurați EMAIL_PASSWORD în .env');
+        }
+        if (!isSMSConfigured) {
+            console.log('   • SMS API: Configurați SMS_API_TOKEN în .env');
+        }
+        console.log('   • Pentru dezvoltare, aplicația va funcționa fără acestea.\n');
+    }
 });
 
 // Graceful shutdown

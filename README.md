@@ -4,11 +4,27 @@ Aplicație React cu backend Node.js pentru autentificare securizată folosind ve
 
 ## ⚡ START RAPID - UN SINGUR CLICK!
 
-**Pentru a porni aplicația complet curățată cu doar 1 frontend și 1 backend:**
+**Pentru a porni aplicația complet configurată:**
 
-```powershell
+```bash
+# Start universal (funcționează pe orice sistem)
+npm run start-app
+```
+
+**SAU pentru sisteme specifice:**
+
+```bash
+# Unix/Linux/macOS
+./start-app.sh
+
+# Windows PowerShell  
 .\CLEAN_START.ps1
 ```
+
+## 📚 Documentație Completă
+
+Pentru configurare detaliată, troubleshooting și opțiuni avansate:
+**👉 [SETUP-GUIDE.md](./SETUP-GUIDE.md)**
 
 ### 🧹 Script de Curățare Automată
 
