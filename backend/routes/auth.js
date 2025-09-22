@@ -1,0 +1,444 @@
+const express = require('express');
+const { body, validationResult } = require('express-validator');
+const database = require('../utils/database');
+const authUtils = require('../utils/auth');
+const verificationService = require('../utils/verification');
+
+const router = express.Router();
+
+// POST /api/auth/register - Înregistrare utilizator nou (Pasul 1)
+router.post('/register', [
+    body('firstName')
+        .trim()
+        .isLength({ min: 2, max: 50 })
+        .withMessage('Prenumele trebuie să aibă între 2 și 50 de caractere'),
+    body('lastName')
+        .trim()
+        .isLength({ min: 2, max: 50 })
+        .withMessage('Numele trebuie să aibă între 2 și 50 de caractere'),
+    body('email')
+        .isEmail()
+        .normalizeEmail()
+        .withMessage('Email invalid'),
+    body('phone')
+        .notEmpty()
+        .withMessage('Numărul de telefon este obligatoriu'),
+    body('password')
+        .isLength({ min: 6 })
+        .withMessage('Parola trebuie să aibă cel puțin 6 caractere'),
+    body('confirmPassword')
+        .custom((value, { req }) => {
+            if (value !== req.body.password) {
+                throw new Error('Confirmarea parolei nu se potrivește');
+            }
+            return true;
+        }),
+    body('verificationMethod')
+        .isIn(['email', 'sms'])
+        .withMessage('Metoda de verificare trebuie să fie email sau sms')
+], async (req, res) => {
+    try {
+        // Verifică erorile de validare
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Datele introduse nu sunt valide',
+                errors: errors.array()
+            });
+        }
+
+        const { firstName, lastName, email, phone, password, verificationMethod } = req.body;
+
+        // Validări suplimentare cu serviciul de verificare
+        if (!verificationService.isValidName(firstName)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Prenumele conține caractere nevalide'
+            });
+        }
+
+        if (!verificationService.isValidName(lastName)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Numele conține caractere nevalide'
+            });
+        }
+
+        if (!verificationService.isValidPhone(phone)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Numărul de telefon nu este valid (format acceptat: +40712345678 sau 0712345678)'
+            });
+        }
+
+        if (!authUtils.isValidEmail(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Format email invalid'
+            });
+        }
+
+        const passwordValidation = authUtils.isValidPassword(password);
+        if (!passwordValidation.valid) {
+            return res.status(400).json({
+                success: false,
+                message: passwordValidation.message
+            });
+        }
+
+        // Verifică dacă utilizatorul există deja
+        const existingUser = database.findUserByEmail(email);
+        if (existingUser && existingUser.isActive) {
+            return res.status(409).json({
+                success: false,
+                message: 'Un cont activ cu acest email există deja'
+            });
+        }
+
+        // Hash parola
+        const hashedPassword = await authUtils.hashPassword(password);
+
+        // Generează cod de verificare
+        const verificationCode = verificationService.generateVerificationCode();
+        const verificationExpiry = verificationService.generateExpiry();
+
+        // Formatează datele
+        const formattedPhone = verificationService.formatPhone(phone);
+        const formattedFirstName = verificationService.formatName(firstName);
+        const formattedLastName = verificationService.formatName(lastName);
+
+        // Creează utilizatorul pending
+        const pendingUserData = {
+            firstName: formattedFirstName,
+            lastName: formattedLastName,
+            email,
+            password: hashedPassword,
+            phone: formattedPhone,
+            verificationCode,
+            verificationExpiry,
+            verificationMethod,
+            role: 'user',
+            createdAt: new Date().toISOString(),
+            isActive: false,
+            isVerified: false
+        };
+
+        const result = database.createPendingUser(pendingUserData);
+        if (!result.success) {
+            return res.status(500).json({
+                success: false,
+                message: result.message
+            });
+        }
+
+        // Trimite codul de verificare
+        const sendResult = await verificationService.sendVerificationCode(
+            verificationMethod,
+            email,
+            formattedPhone,
+            verificationCode,
+            formattedFirstName
+        );
+
+        if (!sendResult.success) {
+            return res.status(500).json({
+                success: false,
+                message: sendResult.message
+            });
+        }
+
+        res.status(201).json({
+            success: true,
+            message: `Cod de verificare trimis prin ${verificationMethod}. Verifică-ți ${verificationMethod === 'email' ? 'email-ul' : 'SMS-urile'}.`,
+            verificationMethod,
+            email: email // Pentru a ști la ce email să verificăm
+        });
+
+    } catch (error) {
+        console.error('Eroare la înregistrare:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eroare internă de server'
+        });
+    }
+});
+
+// POST /api/auth/verify - Verifică codul de 6 cifre (Pasul 2)
+router.post('/verify', [
+    body('email')
+        .isEmail()
+        .normalizeEmail()
+        .withMessage('Email invalid'),
+    body('verificationCode')
+        .isLength({ min: 6, max: 6 })
+        .isNumeric()
+        .withMessage('Codul de verificare trebuie să aibă exact 6 cifre')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Datele nu sunt valide',
+                errors: errors.array()
+            });
+        }
+
+        const { email, verificationCode } = req.body;
+
+        // Curăță utilizatorii pending expirați
+        database.cleanExpiredPendingUsers();
+
+        // Activează utilizatorul
+        const result = database.activatePendingUser(email, verificationCode);
+
+        if (!result.success) {
+            return res.status(400).json({
+                success: false,
+                message: result.message
+            });
+        }
+
+        // Generează token pentru utilizatorul nou activat
+        const token = authUtils.generateToken(result.user);
+
+        res.json({
+            success: true,
+            message: 'Cont verificat și activat cu succes!',
+            user: result.user,
+            token
+        });
+
+    } catch (error) {
+        console.error('Eroare la verificare:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eroare internă de server'
+        });
+    }
+});
+
+// POST /api/auth/resend-code - Retrimite codul de verificare
+router.post('/resend-code', [
+    body('email')
+        .isEmail()
+        .normalizeEmail()
+        .withMessage('Email invalid')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email invalid',
+                errors: errors.array()
+            });
+        }
+
+        const { email } = req.body;
+
+        // Găsește utilizatorul pending
+        const pendingUser = database.findPendingUserByEmail(email);
+        if (!pendingUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'Nu s-a găsit o înregistrare în așteptare pentru acest email'
+            });
+        }
+
+        // Generează cod nou
+        const newCode = verificationService.generateVerificationCode();
+        const newExpiry = verificationService.generateExpiry();
+
+        // Actualizează datele pending
+        pendingUser.verificationCode = newCode;
+        pendingUser.verificationExpiry = newExpiry;
+
+        const data = database.readAccounts();
+        database.writeAccounts(data);
+
+        // Trimite noul cod
+        const sendResult = await verificationService.sendVerificationCode(
+            pendingUser.verificationMethod,
+            pendingUser.email,
+            pendingUser.phone,
+            newCode,
+            pendingUser.firstName
+        );
+
+        if (!sendResult.success) {
+            return res.status(500).json({
+                success: false,
+                message: sendResult.message
+            });
+        }
+
+        res.json({
+            success: true,
+            message: `Cod nou de verificare trimis prin ${pendingUser.verificationMethod}`,
+            verificationMethod: pendingUser.verificationMethod
+        });
+
+    } catch (error) {
+        console.error('Eroare la retrimierea codului:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eroare internă de server'
+        });
+    }
+});
+
+// POST /api/auth/login - Autentificare utilizator
+router.post('/login', [
+    body('email')
+        .isEmail()
+        .normalizeEmail()
+        .withMessage('Email invalid'),
+    body('password')
+        .notEmpty()
+        .withMessage('Parola este obligatorie')
+], async (req, res) => {
+    try {
+        // Verifică erorile de validare
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email sau parolă invalide',
+                errors: errors.array()
+            });
+        }
+
+        const { email, password } = req.body;
+
+        // Găsește utilizatorul
+        const user = database.findUserByEmail(email);
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Email sau parolă incorecte'
+            });
+        }
+
+        // Verifică dacă contul este activ și verificat
+        if (!user.isActive) {
+            return res.status(401).json({
+                success: false,
+                message: 'Contul este dezactivat'
+            });
+        }
+
+        if (!user.isVerified) {
+            return res.status(401).json({
+                success: false,
+                message: 'Contul nu a fost verificat. Verifică-ți email-ul sau SMS-urile.'
+            });
+        }
+
+        // Verifică parola
+        const isPasswordValid = await authUtils.verifyPassword(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: 'Email sau parolă incorecte'
+            });
+        }
+
+        // Actualizează timpul ultimei autentificări
+        database.updateLastLogin(user.id);
+
+        // Generează token
+        const { password: _, ...userWithoutPassword } = user;
+        const token = authUtils.generateToken(userWithoutPassword);
+
+        res.json({
+            success: true,
+            message: 'Autentificare reușită',
+            user: userWithoutPassword,
+            token
+        });
+
+    } catch (error) {
+        console.error('Eroare la autentificare:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eroare internă de server'
+        });
+    }
+});
+
+// POST /api/auth/verify - Verifică token-ul
+router.post('/verify', (req, res) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: 'Token necesar'
+            });
+        }
+
+        const decoded = authUtils.verifyToken(token);
+
+        // Verifică dacă utilizatorul mai există și este activ
+        const user = database.findUserById(decoded.id);
+        if (!user || !user.isActive) {
+            return res.status(401).json({
+                success: false,
+                message: 'Token invalid sau cont inexistent'
+            });
+        }
+
+        const { password: _, ...userWithoutPassword } = user;
+
+        res.json({
+            success: true,
+            user: userWithoutPassword
+        });
+
+    } catch (error) {
+        res.status(401).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+// POST /api/auth/logout - Deconectare (momentan doar confirmă)
+router.post('/logout', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Deconectare reușită'
+    });
+});
+
+// GET /api/auth/me - Informații despre utilizatorul curent
+router.get('/me', authUtils.authenticateToken, (req, res) => {
+    try {
+        const user = database.findUserById(req.user.id);
+        if (!user || !user.isActive) {
+            return res.status(404).json({
+                success: false,
+                message: 'Utilizator negăsit'
+            });
+        }
+
+        const { password: _, ...userWithoutPassword } = user;
+
+        res.json({
+            success: true,
+            user: userWithoutPassword
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Eroare internă de server'
+        });
+    }
+});
+
+module.exports = router;

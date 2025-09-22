@@ -1,6 +1,62 @@
-# Getting Started with Create React App
+# 🔐 React Notificări - Sistem de Autentificare cu Verificare 2FA
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Aplicație React cu backend Node.js pentru autentificare securizată folosind verificare în 2 pași prin **email real SMTP** și **SMS real**.
+
+## ⚡ START RAPID - UN SINGUR CLICK!
+
+**Pentru a porni aplicația complet curățată cu doar 1 frontend și 1 backend:**
+
+```powershell
+.\CLEAN_START.ps1
+```
+
+### 🧹 Script de Curățare Automată
+
+Acest script **CLEAN_START.ps1** face următoarele automat:
+
+1. **Oprește toate procesele** Node.js, npm care pot ocupa porturile
+2. **Curață cache-ul** npm și fișierele temporare  
+3. **Verifică dependențele** și le instalează dacă lipsesc
+4. **Pornește DOAR 1 backend** pe portul 3001
+5. **Pornește DOAR 1 frontend** pe portul 3000
+6. **Rulează teste automate** pentru validare
+7. **Deschide browser-ul** automat la aplicație
+
+### 📋 Opțiuni Script
+
+```powershell
+# Pornire standard cu teste
+.\CLEAN_START.ps1
+
+# Pornire fără teste (mai rapid)
+.\CLEAN_START.ps1 -SkipTests
+
+# Pornire cu output detaliat
+.\CLEAN_START.ps1 -Verbose
+
+# Combinat
+.\CLEAN_START.ps1 -SkipTests -Verbose
+```
+
+### 🛑 Oprire Rapidă
+
+```powershell
+# Oprește toate procesele Node.js/npm
+Get-Process node,npm -ErrorAction SilentlyContinue | Stop-Process -Force
+```
+
+### 🔧 Servicii Reale Configurate
+
+- **📧 Email SMTP**: noreply@misedainspectsrl.ro (mail.misedainspectsrl.ro:465)
+- **📱 SMS API**: smsadvert.ro cu token JWT valid
+- **🔐 JWT Authentication**: Tokeni securizați pentru sesiuni
+- **📊 Database**: Stocare JSON pentru utilizatori
+
+### 🎯 Linkuri Aplicație
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
+- **Health Check**: http://localhost:3001/api/health
 
 ## Available Scripts
 
