@@ -98,7 +98,7 @@ const VerificationCode: React.FC<VerificationCodeProps> = ({
         setError('');
 
         try {
-            const response = await fetch('http://localhost:3002/api/auth/verify', {
+            const response = await fetch('http://localhost:3001/api/auth/verify', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ const VerificationCode: React.FC<VerificationCodeProps> = ({
         setError('');
 
         try {
-            const response = await fetch('http://localhost:3002/api/auth/resend-code', {
+            const response = await fetch('http://localhost:3001/api/auth/resend-code', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

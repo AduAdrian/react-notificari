@@ -1,0 +1,24 @@
+nohup: ignoring input
+
+> react-notificari-backend@1.0.0 start
+> node server.js
+
+
++------------------------------------------------------+
+�         BACKEND SERVER PORNIT CU SUCCES!            �
+�------------------------------------------------------�
+�  ?? Server URL: http://localhost:3001              �
+�  ?? Email SMTP: Configurat ?i func?ional            �
+�  ?? SMS API: Configurat ?i func?ional               �
+�  ?? JWT: Activ                                      �
+�  ?? Environment: development                     �
++------------------------------------------------------+
+    
+❌ Eroare conexiune SMTP: Invalid login: 535 Incorrect authentication data
+📝 Verificați configurația din .env și config/email.js
+2025-09-22T14:12:16.925Z - GET /api/health
+2025-09-22T14:14:35.731Z - GET /
+2025-09-22T14:24:49.273Z - GET /
+2025-09-22T14:24:49.463Z - GET /favicon.ico
+SIGTERM received, closing server...
+Server closed

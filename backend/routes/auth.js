@@ -1,10 +1,125 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
+const fetch = require('node-fetch');
 const database = require('../utils/database');
 const authUtils = require('../utils/auth');
 const verificationService = require('../utils/verification');
 
 const router = express.Router();
+
+// GitHub OAuth endpoint
+router.post('/github', async (req, res) => {
+    try {
+        const { code } = req.body;
+        
+        if (!code) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cod de autorizare lipsă'
+            });
+        }
+        
+        // Schimbăm codul pentru access token
+        const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                client_id: process.env.REACT_APP_GITHUB_CLIENT_ID,
+                client_secret: process.env.GITHUB_CLIENT_SECRET,
+                code: code
+            })
+        });
+        
+        const tokenData = await tokenResponse.json();
+        
+        if (tokenData.error) {
+            return res.status(400).json({
+                success: false,
+                message: 'Eroare la obținerea token-ului GitHub'
+            });
+        }
+        
+        // Obținem datele utilizatorului de la GitHub
+        const userResponse = await fetch('https://api.github.com/user', {
+            headers: {
+                'Authorization': `Bearer ${tokenData.access_token}`,
+                'User-Agent': 'React-Notificari-App'
+            }
+        });
+        
+        const githubUser = await userResponse.json();
+        
+        // Obținem email-ul (poate fi privat)
+        const emailResponse = await fetch('https://api.github.com/user/emails', {
+            headers: {
+                'Authorization': `Bearer ${tokenData.access_token}`,
+                'User-Agent': 'React-Notificari-App'
+            }
+        });
+        
+        const emails = await emailResponse.json();
+        const primaryEmail = emails.find(email => email.primary && email.verified);
+        
+        if (!primaryEmail) {
+            return res.status(400).json({
+                success: false,
+                message: 'Nu s-a găsit un email verificat în contul GitHub'
+            });
+        }
+        
+        // Verificăm dacă utilizatorul există deja
+        let user = database.getUserByEmail(primaryEmail.email);
+        
+        if (!user) {
+            // Creăm un utilizator nou
+            const newUser = {
+                id: Date.now().toString(),
+                firstName: githubUser.name ? githubUser.name.split(' ')[0] : githubUser.login,
+                lastName: githubUser.name ? githubUser.name.split(' ').slice(1).join(' ') : '',
+                email: primaryEmail.email,
+                phone: '', // GitHub nu oferă telefon
+                password: null, // Nu avem parolă pentru OAuth
+                verificationMethod: 'github',
+                isVerified: true, // GitHub este deja verificat
+                githubId: githubUser.id,
+                createdAt: new Date().toISOString()
+            };
+            
+            user = database.addUser(newUser);
+        } else {
+            // Actualizăm GitHub ID-ul dacă nu există
+            if (!user.githubId) {
+                user.githubId = githubUser.id;
+                database.updateUser(user.id, user);
+            }
+        }
+        
+        // Generăm JWT token
+        const token = authUtils.generateToken(user.id);
+        
+        res.json({
+            success: true,
+            message: 'Autentificare cu GitHub reușită',
+            token: token,
+            user: {
+                id: user.id,
+                name: user.firstName + ' ' + user.lastName,
+                email: user.email,
+                verificationMethod: user.verificationMethod
+            }
+        });
+        
+    } catch (error) {
+        console.error('Eroare GitHub OAuth:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Eroare internă de server'
+        });
+    }
+});
 
 // POST /api/auth/register - Înregistrare utilizator nou (Pasul 1)
 router.post('/register', [
