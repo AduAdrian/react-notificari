@@ -20,10 +20,18 @@
 .env.test.local
 .env.production.local
 
+# backend environment files
+/backend/.env
+/backend/.env.local
+/backend/.env.production
+
 # logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+backend.log
+frontend.log
 
 # Runtime data
 pids
