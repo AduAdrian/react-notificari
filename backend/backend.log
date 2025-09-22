@@ -1,8 +1,3 @@
-nohup: ignoring input
-
-> react-notificari-backend@1.0.0 start
-> node server.js
-
 
 +------------------------------------------------------+
 �         BACKEND SERVER PORNIT CU SUCCES!            �
@@ -14,11 +9,9 @@ nohup: ignoring input
 �  ?? Environment: development                     �
 +------------------------------------------------------+
     
-❌ Eroare conexiune SMTP: Invalid login: 535 Incorrect authentication data
+2025-09-22T14:46:31.003Z - GET /api/health
+2025-09-22T14:46:38.770Z - GET /api/health
+❌ Eroare conexiune SMTP: queryA ETIMEOUT mail.misedainspectsrl.ro
 📝 Verificați configurația din .env și config/email.js
-2025-09-22T14:12:16.925Z - GET /api/health
-2025-09-22T14:14:35.731Z - GET /
-2025-09-22T14:24:49.273Z - GET /
-2025-09-22T14:24:49.463Z - GET /favicon.ico
-SIGTERM received, closing server...
-Server closed
+2025-09-22T14:50:21.947Z - GET /
+2025-09-22T14:50:28.676Z - GET /api/health

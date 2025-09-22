@@ -4,7 +4,29 @@ Aplicație React cu backend Node.js pentru autentificare securizată folosind ve
 
 ## ⚡ START RAPID - UN SINGUR CLICK!
 
-**Pentru a porni aplicația complet curățată cu doar 1 frontend și 1 backend:**
+### 🐧 Linux/macOS/Unix Systems
+
+**Quick development start (recommended for development):**
+
+```bash
+./start-dev.sh
+```
+
+**Full monitoring startup:**
+
+```bash
+./start-app.sh
+```
+
+**Stop application:**
+
+```bash
+./stop-app.sh
+```
+
+### 🪟 Windows Systems
+
+**For Windows PowerShell users:**
 
 ```powershell
 .\CLEAN_START.ps1
@@ -40,10 +62,32 @@ Acest script **CLEAN_START.ps1** face următoarele automat:
 
 ### 🛑 Oprire Rapidă
 
+#### Linux/macOS/Unix:
+
+```bash
+./stop-app.sh
+```
+
+#### Windows PowerShell:
+
 ```powershell
 # Oprește toate procesele Node.js/npm
 Get-Process node,npm -ErrorAction SilentlyContinue | Stop-Process -Force
 ```
+
+### 🔧 Configuration
+
+The application uses environment variables for configuration:
+
+- **Backend**: Configuration is stored in `backend/.env`
+- **Development**: Automatic fallback to email/SMS simulation when production services are unavailable
+- **Production**: Real SMTP and SMS services (requires valid credentials in `.env`)
+
+#### First Time Setup:
+
+1. The application automatically creates a development `.env` file
+2. For production, copy `backend/.env.example` to `backend/.env` and configure real credentials
+3. Email and SMS services will use simulation fallbacks during development
 
 ### 🔧 Servicii Reale Configurate
 
