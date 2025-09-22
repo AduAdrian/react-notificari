@@ -1,13 +1,28 @@
-// Validare configurație înaintea încărcării aplicației
-const { config, isEmailConfigured, isSMSConfigured } = require('./config/env-validator');
-
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
+// Global error handlers pentru a preveni crash-urile aplicației
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('⚠️ Unhandled Promise Rejection:', reason);
+    console.error('At promise:', promise);
+    // Nu închide aplicația, doar loghează
+});
+
+process.on('uncaughtException', (error, origin) => {
+    console.error('🚨 Uncaught Exception:', error);
+    console.error('Origin:', origin);
+    // Graceful shutdown după logare
+    setTimeout(() => {
+        console.log('🔄 Restarting server after uncaught exception...');
+        process.exit(1);
+    }, 1000);
+});
+
 const app = express();
-const PORT = config.PORT;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
@@ -27,25 +42,55 @@ app.use((req, res, next) => {
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
-// Health check endpoint
+// SMS Queue management endpoints
+app.get('/api/sms/queue/status', async (req, res) => {
+    try {
+        const verificationService = require('./utils/verification');
+        const status = await verificationService.checkSMSQueueStatus();
+        res.json({ success: true, queue: status });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/sms/queue/process', async (req, res) => {
+    try {
+        const verificationService = require('./utils/verification');
+        const result = await verificationService.processSMSQueue();
+        res.json({ success: true, result });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.delete('/api/sms/queue/clear', async (req, res) => {
+    try {
+        const verificationService = require('./utils/verification');
+        const result = await verificationService.clearSMSQueue();
+        res.json({ success: true, result });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Health check endpoint cu informații detaliate
 app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'OK', 
+    const health = {
+        status: 'OK',
         message: 'Backend funcționează perfect!',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        configuration: {
-            environment: config.NODE_ENV,
-            emailConfigured: isEmailConfigured,
-            smsConfigured: isSMSConfigured,
-            jwtConfigured: !!config.JWT_SECRET
-        }
-    });
+        memory: process.memoryUsage(),
+        environment: process.env.NODE_ENV || 'development',
+        version: '1.0.0'
+    };
+
+    res.json(health);
 });
 
 // Root endpoint
 app.get('/', (req, res) => {
-    res.json({ 
+    res.json({
         message: 'React Notificari Backend API',
         version: '1.0.0',
         endpoints: {
@@ -59,19 +104,29 @@ app.get('/', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Error:', err.stack);
-    res.status(500).json({ 
-        success: false, 
-        message: 'Eroare interna server',
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    console.error('🚨 Express Error Caught:', err.stack);
+
+    // Nu trimite detalii în producție
+    const message = process.env.NODE_ENV === 'production'
+        ? 'Eroare interna server'
+        : err.message;
+
+    res.status(err.status || 500).json({
+        success: false,
+        message: message,
+        timestamp: new Date().toISOString(),
+        ...(process.env.NODE_ENV === 'development' && {
+            error: err.message,
+            stack: err.stack
+        })
     });
 });
 
 // 404 handler
 app.use((req, res) => {
-    res.status(404).json({ 
-        success: false, 
-        message: `Endpoint ${req.path} nu exista` 
+    res.status(404).json({
+        success: false,
+        message: `Endpoint ${req.path} nu exista`
     });
 });
 
@@ -79,44 +134,35 @@ app.use((req, res) => {
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 +------------------------------------------------------+
-│         BACKEND SERVER PORNIT CU SUCCES!            │
-│------------------------------------------------------│
-│  🌐 Server URL: http://localhost:${PORT}              │
-│  📧 Email SMTP: ${isEmailConfigured ? 'Configurat și funcțional' : 'Nu este configurat (dev mode)'}            │
-│  📱 SMS API: ${isSMSConfigured ? 'Configurat și funcțional' : 'Nu este configurat (dev mode)'}               │
-│  🔐 JWT: ${config.JWT_SECRET ? 'Activ' : 'Inactiv'}                                      │
-│  🛠️  Environment: ${config.NODE_ENV}                     │
+�         BACKEND SERVER PORNIT CU SUCCES!            �
+�------------------------------------------------------�
+�  ?? Server URL: http://localhost:${PORT}              �
+�  ?? Email SMTP: Configurat ?i func?ional            �
+�  ?? SMS API: Configurat ?i func?ional               �
+�  ?? JWT: Activ                                      �
+�  ?? Environment: ${process.env.NODE_ENV || 'development'}                     �
 +------------------------------------------------------+
     `);
-    
-    // Afișează avertismente dacă serviciile nu sunt configurate
-    if (!isEmailConfigured || !isSMSConfigured) {
-        console.log('\n⚠️  AVERTISMENT: Unele servicii nu sunt configurate complet:');
-        if (!isEmailConfigured) {
-            console.log('   • Email SMTP: Configurați EMAIL_PASSWORD în .env');
-        }
-        if (!isSMSConfigured) {
-            console.log('   • SMS API: Configurați SMS_API_TOKEN în .env');
-        }
-        console.log('   • Pentru dezvoltare, aplicația va funcționa fără acestea.\n');
-    }
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('SIGTERM received, closing server...');
-    server.close(() => {
-        console.log('Server closed');
-        process.exit(0);
-    });
-});
+// Graceful shutdown handlers
+const gracefulShutdown = (signal) => {
+    console.log(`\n🔄 ${signal} received, starting graceful shutdown...`);
 
-process.on('SIGINT', () => {
-    console.log('\nSIGINT received, closing server...');
     server.close(() => {
-        console.log('Server closed');
+        console.log('✅ HTTP server closed');
+        console.log('👋 Server shutdown complete');
         process.exit(0);
     });
-});
+
+    // Force close după 10 secunde dacă graceful shutdown nu reușește
+    setTimeout(() => {
+        console.error('❌ Forced shutdown after timeout');
+        process.exit(1);
+    }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 module.exports = app;

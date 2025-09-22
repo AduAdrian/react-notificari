@@ -4,7 +4,7 @@ Write-Host "`n🧹 CLEAN START - Curățare și pornire aplicație`n" -Foregroun
 
 # Oprire procese
 Write-Host "⏹️ Opresc procese existente..." -ForegroundColor Yellow
-Get-Process -Name "node","npm" -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process -Name "node", "npm" -ErrorAction SilentlyContinue | Stop-Process -Force
 taskkill /F /IM node.exe 2>$null | Out-Null
 taskkill /F /IM npm.exe 2>$null | Out-Null
 Write-Host "✅ Procese oprite" -ForegroundColor Green
@@ -16,7 +16,7 @@ Write-Host "✅ Cache curățat" -ForegroundColor Green
 
 # Verificare backend
 Write-Host "`n🔧 Verificare backend..." -ForegroundColor Yellow
-Set-Location "C:\Users\adrian\Desktop\react-notificari\backend"
+Set-Location "C:\Users\adrian\ad\react-notificari\backend"
 if (-not (Test-Path "node_modules")) {
     npm install --silent
 }
@@ -24,7 +24,7 @@ Write-Host "✅ Backend gata" -ForegroundColor Green
 
 # Verificare frontend
 Write-Host "`n🎨 Verificare frontend..." -ForegroundColor Yellow
-Set-Location "C:\Users\adrian\Desktop\react-notificari"
+Set-Location "C:\Users\adrian\ad\react-notificari"
 if (-not (Test-Path "node_modules")) {
     npm install --silent
 }
@@ -32,8 +32,8 @@ Write-Host "✅ Frontend gata" -ForegroundColor Green
 
 # Pornire backend
 Write-Host "`n🚀 Pornesc backend pe port 3001..." -ForegroundColor Yellow
-Set-Location "C:\Users\adrian\Desktop\react-notificari\backend"
-$backendJob = Start-Job { Set-Location "C:\Users\adrian\Desktop\react-notificari\backend"; node server.js }
+Set-Location "C:\Users\adrian\ad\react-notificari\backend"
+$backendJob = Start-Job { Set-Location "C:\Users\adrian\ad\react-notificari\backend"; node server.js }
 
 # Aștept backend
 $waited = 0
@@ -44,7 +44,8 @@ while ($waited -lt 15) {
         $response = Invoke-RestMethod -Uri "http://localhost:3001/api/health" -TimeoutSec 2
         Write-Host "✅ Backend PORNIT pe http://localhost:3001" -ForegroundColor Green
         break
-    } catch {
+    }
+    catch {
         Write-Host "." -NoNewline -ForegroundColor Yellow
     }
 }
@@ -56,8 +57,8 @@ if ($waited -eq 15) {
 
 # Pornire frontend
 Write-Host "`n🎨 Pornesc frontend pe port 3000..." -ForegroundColor Yellow
-Set-Location "C:\Users\adrian\Desktop\react-notificari"
-$frontendJob = Start-Job { Set-Location "C:\Users\adrian\Desktop\react-notificari"; $env:BROWSER="none"; npm start }
+Set-Location "C:\Users\adrian\ad\react-notificari"
+$frontendJob = Start-Job { Set-Location "C:\Users\adrian\ad\react-notificari"; $env:BROWSER = "none"; npm start }
 
 # Aștept frontend
 Write-Host "⏳ Compilare React..." -ForegroundColor Yellow
@@ -71,7 +72,8 @@ while ($waited -lt 60) {
             Write-Host "`n✅ Frontend PORNIT pe http://localhost:3000" -ForegroundColor Green
             break
         }
-    } catch {
+    }
+    catch {
         Write-Host "." -NoNewline -ForegroundColor Yellow
     }
 }
@@ -84,12 +86,13 @@ if ($waited -eq 60) {
 # Teste (opțional)
 if (-not $SkipTests) {
     Write-Host "`n🧪 Teste automate..." -ForegroundColor Yellow
-    Set-Location "C:\Users\adrian\Desktop\react-notificari\backend"
+    Set-Location "C:\Users\adrian\ad\react-notificari\backend"
     Start-Sleep 3
     try {
         node tests\e2e.test.js
         Write-Host "✅ Teste complete" -ForegroundColor Green
-    } catch {
+    }
+    catch {
         Write-Host "⚠️ Teste parțiale" -ForegroundColor Yellow
     }
 }

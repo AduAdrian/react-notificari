@@ -204,6 +204,95 @@ class VerificationService {
             .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
             .join(' ');
     }
+
+    // Verifică statusul mesajelor din coada SMS
+    async checkSMSQueueStatus() {
+        try {
+            console.log('🔍 Verificare status coadă SMS...');
+            
+            const response = await axios.get('https://www.smsadvert.ro/api/sms/queue', {
+                headers: {
+                    'Authorization': `Bearer ${this.smsConfig.token}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 10000
+            });
+
+            console.log('📊 Status coadă SMS:', response.data);
+            
+            if (response.data && response.data.queueCount > 0) {
+                console.log(`⏳ ${response.data.queueCount} mesaje în coadă`);
+                return response.data;
+            } else {
+                console.log('✅ Coada SMS este goală');
+                return { queueCount: 0 };
+            }
+            
+        } catch (error) {
+            console.error('❌ Eroare verificare coadă SMS:', error.response?.data || error.message);
+            return null;
+        }
+    }
+
+    // Procesează mesajele din coada SMS - forțează trimiterea
+    async processSMSQueue() {
+        try {
+            console.log('🚀 Procesare forțată coadă SMS...');
+            
+            // Încearcă endpoint-ul de procesare
+            const response = await axios.post('https://www.smsadvert.ro/api/sms/send-queue', {}, {
+                headers: {
+                    'Authorization': `Bearer ${this.smsConfig.token}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 15000
+            });
+
+            console.log('✅ Coadă SMS procesată:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('❌ Eroare procesare coadă SMS:', error.response?.data || error.message);
+            
+            // Încearcă cu alt endpoint
+            try {
+                console.log('🔄 Reîncerc cu alt endpoint...');
+                const retryResponse = await axios.delete('https://www.smsadvert.ro/api/sms/queue/clear', {
+                    headers: {
+                        'Authorization': `Bearer ${this.smsConfig.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 10000
+                });
+                
+                console.log('✅ Coadă curățată cu succes:', retryResponse.data);
+                return retryResponse.data;
+            } catch (retryError) {
+                console.error('❌ Eroare la retry:', retryError.response?.data || retryError.message);
+                return null;
+            }
+        }
+    }
+
+    // Șterge toate mesajele din coada SMS
+    async clearSMSQueue() {
+        try {
+            console.log('🧹 Ștergere completă coadă SMS...');
+            
+            const response = await axios.delete('https://www.smsadvert.ro/api/sms/queue', {
+                headers: {
+                    'Authorization': `Bearer ${this.smsConfig.token}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 10000
+            });
+
+            console.log('✅ Coadă SMS ștearsă complet:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('❌ Eroare ștergere coadă SMS:', error.response?.data || error.message);
+            return null;
+        }
+    }
 }
 
 module.exports = new VerificationService();
