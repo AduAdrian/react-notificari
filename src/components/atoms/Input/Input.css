@@ -1,0 +1,326 @@
+/**
+ * Input Component Styles
+ */
+
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: auto;
+}
+
+.input-wrapper--full-width {
+  width: 100%;
+}
+
+/* Label styles */
+.input-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  user-select: none;
+}
+
+.input-label--required {
+  color: #374151;
+}
+
+.input-required-indicator {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* Input container */
+.input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Input styles */
+.input {
+  width: 100%;
+  border: 2px solid #e5e5e5;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 16px;
+  color: #374151;
+  background: #ffffff;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+}
+
+/* Size variants */
+.input--sm {
+  padding: 8px 12px;
+  font-size: 14px;
+  min-height: 36px;
+}
+
+.input--md {
+  padding: 12px 16px;
+  font-size: 16px;
+  min-height: 44px;
+}
+
+.input--lg {
+  padding: 14px 20px;
+  font-size: 18px;
+  min-height: 52px;
+}
+
+/* Focus states */
+.input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.input-wrapper--focused .input {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Hover states */
+.input:hover:not(:disabled):not(:focus) {
+  border-color: #d1d5db;
+}
+
+/* Disabled state */
+.input:disabled {
+  background-color: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.input-wrapper--disabled .input-label {
+  color: #9ca3af;
+}
+
+/* Read-only state */
+.input:read-only {
+  background-color: #f9fafb;
+  cursor: default;
+}
+
+/* Error state */
+.input-wrapper--error .input {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.input-wrapper--error .input:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.input-wrapper--error .input-label {
+  color: #ef4444;
+}
+
+/* Success state */
+.input-wrapper--success .input {
+  border-color: #10b981;
+  background-color: #f0fdf4;
+}
+
+.input-wrapper--success .input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.input-wrapper--success .input-label {
+  color: #10b981;
+}
+
+/* Icon styles */
+.input-icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input-icon--clickable {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.input-icon--clickable:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #667eea;
+}
+
+.input-icon--before {
+  left: 12px;
+}
+
+.input-icon--after {
+  right: 12px;
+}
+
+/* Adjust padding when icons are present */
+.input-wrapper--with-icon-before .input {
+  padding-left: 44px;
+}
+
+.input-wrapper--with-icon-after .input {
+  padding-right: 44px;
+}
+
+/* Message styles */
+.input-help-text {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.input-error-message {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 500;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.input-error-message::before {
+  content: "⚠";
+  font-size: 14px;
+}
+
+.input-success-message {
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 500;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.input-success-message::before {
+  content: "✓";
+  font-size: 14px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .input {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  .input--lg {
+    padding: 12px 16px;
+    font-size: 16px;
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .input {
+    min-height: 44px; /* Minimum touch target */
+  }
+  
+  .input--sm {
+    padding: 10px 12px;
+    min-height: 40px;
+  }
+  
+  .input--md {
+    padding: 12px 16px;
+    min-height: 44px;
+  }
+}
+
+/* Password input specific styles */
+.input[type="password"] {
+  font-family: text-security-disc;
+  -webkit-text-security: disc;
+}
+
+/* Number input - hide spinners */
+.input[type="number"]::-webkit-outer-spin-button,
+.input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Search input styling */
+.input[type="search"] {
+  -webkit-appearance: none;
+}
+
+.input[type="search"]::-webkit-search-decoration,
+.input[type="search"]::-webkit-search-cancel-button,
+.input[type="search"]::-webkit-search-results-button,
+.input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .input {
+    border-width: 2px;
+  }
+  
+  .input:focus {
+    border-width: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .input {
+    transition: none;
+  }
+  
+  .input-icon--clickable {
+    transition: none;
+  }
+}
+
+/* Dark mode support (if implemented) */
+@media (prefers-color-scheme: dark) {
+  .input-label {
+    color: #f3f4f6;
+  }
+  
+  .input {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #f3f4f6;
+  }
+  
+  .input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  }
+  
+  .input:disabled {
+    background-color: #1f2937;
+    color: #6b7280;
+  }
+  
+  .input-help-text {
+    color: #9ca3af;
+  }
+  
+  .input-icon {
+    color: #6b7280;
+  }
+}
