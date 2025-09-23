@@ -1,9 +1,9 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const fetch = require('node-fetch');
-const database = require('../utils/database');
-const authUtils = require('../utils/auth');
-const verificationService = require('../utils/verification');
+const database = require('./utils/database');
+const authUtils = require('./utils/auth');
+const verificationService = require('./utils/verification');
 
 const router = express.Router();
 

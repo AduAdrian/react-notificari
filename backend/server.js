@@ -3,10 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { connectDB } = require('./config/database');
+// const { connectDB } = require('./config/database');
 
-// Conectare la MongoDB
-connectDB();
+// Disable MongoDB for now - use JSON database
+// connectDB();
 
 // Global error handlers pentru a preveni crash-urile aplicației
 process.on('unhandledRejection', (reason, promise) => {
@@ -48,7 +48,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
-const authRoutes = require('./routes/auth-mongodb');
+const authRoutes = require('./auth_copy');  // Use JSON database auth
 const adminRoutes = require('./routes/admin');
 const vehicleRoutes = require('./routes/vehicles');
 

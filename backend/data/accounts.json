@@ -15,23 +15,23 @@
       "verificationCode": null,
       "verificationExpiry": null,
       "verificationMethod": "email"
+    },
+    {
+      "id": 2,
+      "firstName": "Test",
+      "lastName": "User",
+      "email": "test@example.com",
+      "password": "$2a$12$HmJYOb8stKouBSk0RayVH.iMIbU8Vv2cpRCAmNDZ.HlZgZZkagMCu",
+      "phone": "+40700000000",
+      "role": "admin",
+      "createdAt": "2025-09-23T19:59:09.242Z",
+      "lastLogin": "2025-09-23T20:00:21.874Z",
+      "isActive": true,
+      "isVerified": true,
+      "verificationCode": null,
+      "verificationExpiry": null,
+      "verificationMethod": "email"
     }
   ],
-  "pendingUsers": [
-    {
-      "id": 1758649671787,
-      "firstName": "Adad",
-      "lastName": "Ad",
-      "email": "adu_sv2009@yaahoo.com",
-      "password": "$2a$12$amO9NSvpT5xhGfMXYEOnB.6G0Chxaj3nxPDdHJdLbu0Fh.BHjWp.e",
-      "phone": "+40756596565",
-      "verificationCode": "154417",
-      "verificationExpiry": "2025-09-23T18:02:51.786Z",
-      "verificationMethod": "sms",
-      "role": "user",
-      "createdAt": "2025-09-23T17:47:51.787Z",
-      "isActive": false,
-      "isVerified": false
-    }
-  ]
+  "pendingUsers": []
 }
