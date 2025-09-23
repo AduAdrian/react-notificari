@@ -33,5 +33,51 @@
       "verificationMethod": "email"
     }
   ],
-  "pendingUsers": []
+  "pendingUsers": [],
+  "clients": [
+    {
+      "id": 1,
+      "nrInmatriculare": "B123TEST",
+      "nrTelefon": "0756123456",
+      "valabilitate": "6months",
+      "optional": "Client de test - expiră în 3 zile",
+      "expirationDate": "2025-09-26T20:17:00.000Z",
+      "createdAt": "2025-09-23T20:17:00.000Z",
+      "updatedAt": "2025-09-23T20:17:00.000Z",
+      "createdBy": "system"
+    },
+    {
+      "id": 2,
+      "nrInmatriculare": "B456DEMO",
+      "nrTelefon": "0756987654",
+      "valabilitate": "1year",
+      "optional": "Client demo - expiră în 7 zile",
+      "expirationDate": "2025-09-30T20:17:00.000Z",
+      "createdAt": "2025-09-23T20:17:00.000Z",
+      "updatedAt": "2025-09-23T20:17:00.000Z",
+      "createdBy": "system"
+    },
+    {
+      "id": 3,
+      "nrInmatriculare": "B789VALID",
+      "nrTelefon": "0756555666",
+      "valabilitate": "2years",
+      "optional": "Client valid - expiră în 30 zile",
+      "expirationDate": "2025-10-23T20:17:00.000Z",
+      "createdAt": "2025-09-23T20:17:00.000Z",
+      "updatedAt": "2025-09-23T20:17:00.000Z",
+      "createdBy": "system"
+    },
+    {
+      "id": 4,
+      "nrInmatriculare": "B111EXPIRED",
+      "nrTelefon": "0756111222",
+      "valabilitate": "6months",
+      "optional": "Client expirat - a expirat acum 5 zile",
+      "expirationDate": "2025-09-18T20:17:00.000Z",
+      "createdAt": "2025-09-23T20:17:00.000Z",
+      "updatedAt": "2025-09-23T20:17:00.000Z",
+      "createdBy": "system"
+    }
+  ]
 }

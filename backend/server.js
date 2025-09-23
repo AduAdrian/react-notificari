@@ -56,6 +56,56 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 
+// Test data management endpoints
+const testData = require('./utils/testData');
+
+app.post('/api/test/add-clients', (req, res) => {
+    try {
+        const result = testData.addTestClients();
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.delete('/api/test/remove-clients', (req, res) => {
+    try {
+        const result = testData.removeTestClients();
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Notification service endpoints
+const NotificationService = require('./services/NotificationService');
+const notificationService = new NotificationService();
+
+app.get('/api/notifications/check', async (req, res) => {
+    try {
+        const days = parseInt(req.query.days) || 7;
+        const expiringClients = notificationService.findExpiringClients(days);
+        res.json({ 
+            success: true, 
+            expiringClients,
+            count: expiringClients.length,
+            days 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/notifications/send', async (req, res) => {
+    try {
+        const days = parseInt(req.body.days) || 7;
+        const stats = await notificationService.sendExpirationNotifications(days);
+        res.json({ success: true, stats });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // SMS Queue management endpoints
 app.get('/api/sms/queue/status', async (req, res) => {
     try {
