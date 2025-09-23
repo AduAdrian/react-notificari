@@ -2,10 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import './AdminDashboard.css';
 
-interface Stats {
-    totalClients: number;
-}
-
 interface Client {
     id: string;
     nrInmatriculare: string;
@@ -17,9 +13,7 @@ interface Client {
 
 const AdminDashboard = () => {
     const { user, token, logout } = useAuth();
-    const [stats, setStats] = useState<Stats | null>(null);
     const [clients, setClients] = useState<Client[]>([]);
-    const [activeTab, setActiveTab] = useState('dashboard');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -38,39 +32,8 @@ const AdminDashboard = () => {
             return;
         }
 
-        loadDashboardData();
+        loadClients();
     }, [user]);
-
-    const loadDashboardData = async () => {
-        setLoading(true);
-        try {
-            await Promise.all([
-                loadStats(),
-                loadClients()
-            ]);
-        } catch (error) {
-            setError('Eroare la încărcarea datelor');
-        }
-        setLoading(false);
-    };
-
-    const loadStats = async () => {
-        try {
-            const response = await fetch('/api/admin/dashboard', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            const data = await response.json();
-            if (data.success) {
-                setStats({ totalClients: data.stats.totalClients || 0 });
-            }
-        } catch (error) {
-            console.error('Eroare la încărcarea statisticilor:', error);
-        }
-    };
 
     const loadClients = async () => {
         try {
@@ -155,7 +118,7 @@ const AdminDashboard = () => {
     return (
         <div className="admin-dashboard">
             <div className="admin-header">
-                <h1>� Panou Management Clienți</h1>
+                <h1>🏢 Panou Management Clienți</h1>
                 <div className="admin-user-info">
                     <span>Bun venit, {user.firstName} {user.lastName}</span>
                     <button onClick={logout} className="btn btn-secondary btn-sm">
@@ -164,181 +127,127 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            <div className="admin-tabs">
-                <button
-                    className={`tab ${activeTab === 'dashboard' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('dashboard')}
-                >
-                    📊 Statistici Clienți
-                </button>
-                <button
-                    className={`tab ${activeTab === 'clients' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('clients')}
-                >
-                    👤 Management Clienți
-                </button>
-            </div>
-
             {loading && <div className="loading">Se încarcă...</div>}
             {error && <div className="error-message">{error}</div>}
 
-            {/* Dashboard Tab - Acum doar pentru clienți */}
-            {activeTab === 'dashboard' && stats && (
-                <div className="dashboard-content">
-                    <div className="stats-grid">
-                        <div className="stat-card">
-                            <h3>� Total Clienți</h3>
-                            <div className="stat-number">{stats.totalClients || 0}</div>
-                        </div>
-                        <div className="stat-card">
-                            <h3>📋 Clienți Activi</h3>
-                            <div className="stat-number">{clients.filter(c => c.valabilitate !== 'today').length || 0}</div>
-                        </div>
-                        <div className="stat-card">
-                            <h3>⏰ Expiră Astăzi</h3>
-                            <div className="stat-number">{clients.filter(c => c.valabilitate === 'today').length || 0}</div>
-                        </div>
-                        <div className="stat-card">
-                            <h3>� Clienți Noi (Luna)</h3>
-                            <div className="stat-number">{clients.filter(c => {
-                                if (!c.createdAt) return false;
-                                const created = new Date(c.createdAt);
-                                const now = new Date();
-                                return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
-                            }).length || 0}</div>
-                        </div>
-                        <div className="stat-card">
-                            <h3>� Numere Telefon Unice</h3>
-                            <div className="stat-number">{new Set(clients.map(c => c.nrTelefon)).size || 0}</div>
-                        </div>
-                        <div className="stat-card">
-                            <h3>� Mașini Înregistrate</h3>
-                            <div className="stat-number">{new Set(clients.map(c => c.nrInmatriculare)).size || 0}</div>
-                        </div>
-                    </div>
+            {/* Management Clienți */}
+            <div className="clients-content">
+                <div className="clients-header">
+                    <h2>👤 Management Clienți</h2>
                 </div>
-            )}
 
-            {/* Clients Tab */}
-            {activeTab === 'clients' && (
-                <div className="clients-content">
-                    <div className="clients-header">
-                        <h2>👤 Management Clienți</h2>
-                    </div>
+                {/* Formular adăugare client */}
+                <div className="add-vehicle-form">
+                    <h3>➕ Adaugă Client Nou</h3>
+                    <form onSubmit={handleAddClient}>
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label>Număr Înmatriculare:</label>
+                                <input
+                                    type="text"
+                                    value={clientForm.nrInmatriculare}
+                                    onChange={(e) => setClientForm({
+                                        ...clientForm,
+                                        nrInmatriculare: e.target.value.toUpperCase()
+                                    })}
+                                    placeholder="B123ABC"
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Număr Telefon:</label>
+                                <input
+                                    type="tel"
+                                    value={clientForm.nrTelefon}
+                                    onChange={(e) => setClientForm({
+                                        ...clientForm,
+                                        nrTelefon: e.target.value
+                                    })}
+                                    placeholder="0756596565"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label>Valabilitate:</label>
+                                <select
+                                    value={clientForm.valabilitate}
+                                    onChange={(e) => setClientForm({
+                                        ...clientForm,
+                                        valabilitate: e.target.value
+                                    })}
+                                    required
+                                    title="Selectează perioada de validitate"
+                                >
+                                    <option value="today">Astăzi</option>
+                                    <option value="6months">6 luni</option>
+                                    <option value="1year">1 an</option>
+                                    <option value="2years">2 ani</option>
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Câmp Opțional:</label>
+                                <input
+                                    type="text"
+                                    value={clientForm.optional}
+                                    onChange={(e) => setClientForm({
+                                        ...clientForm,
+                                        optional: e.target.value
+                                    })}
+                                    placeholder="Observații..."
+                                />
+                            </div>
+                        </div>
+                        <button type="submit" className="btn btn-primary">
+                            ➕ Adaugă Client
+                        </button>
+                    </form>
+                </div>
 
-                    {/* Formular adăugare client */}
-                    <div className="add-vehicle-form">
-                        <h3>➕ Adaugă Client Nou</h3>
-                        <form onSubmit={handleAddClient}>
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Număr Înmatriculare:</label>
-                                    <input
-                                        type="text"
-                                        value={clientForm.nrInmatriculare}
-                                        onChange={(e) => setClientForm({
-                                            ...clientForm,
-                                            nrInmatriculare: e.target.value.toUpperCase()
-                                        })}
-                                        placeholder="B123ABC"
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Număr Telefon:</label>
-                                    <input
-                                        type="tel"
-                                        value={clientForm.nrTelefon}
-                                        onChange={(e) => setClientForm({
-                                            ...clientForm,
-                                            nrTelefon: e.target.value
-                                        })}
-                                        placeholder="0756596565"
-                                        required
-                                    />
-                                </div>
-                            </div>
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Valabilitate:</label>
-                                    <select
-                                        value={clientForm.valabilitate}
-                                        onChange={(e) => setClientForm({
-                                            ...clientForm,
-                                            valabilitate: e.target.value
-                                        })}
-                                        required
-                                        title="Selectează perioada de validitate"
-                                    >
-                                        <option value="today">Astăzi</option>
-                                        <option value="6months">6 luni</option>
-                                        <option value="1year">1 an</option>
-                                        <option value="2years">2 ani</option>
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label>Câmp Opțional:</label>
-                                    <input
-                                        type="text"
-                                        value={clientForm.optional}
-                                        onChange={(e) => setClientForm({
-                                            ...clientForm,
-                                            optional: e.target.value
-                                        })}
-                                        placeholder="Observații..."
-                                    />
-                                </div>
-                            </div>
-                            <button type="submit" className="btn btn-primary">
-                                ➕ Adaugă Client
-                            </button>
-                        </form>
-                    </div>
-
-                    {/* Lista clienți */}
-                    <div className="vehicles-list">
-                        <h3>📋 Lista Clienți ({clients.length})</h3>
-                        {clients.length === 0 ? (
-                            <div className="no-vehicles">
-                                <p>Nu există clienți înregistrați.</p>
-                            </div>
-                        ) : (
-                            <div className="table-container">
-                                <table className="vehicles-table">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Nr. Înmatriculare</th>
-                                            <th>Nr. Telefon</th>
-                                            <th>Valabilitate</th>
-                                            <th>Opțional</th>
-                                            <th>Data creării</th>
+                {/* Lista clienți */}
+                <div className="vehicles-list">
+                    <h3>📋 Lista Clienți ({clients.length})</h3>
+                    {clients.length === 0 ? (
+                        <div className="no-vehicles">
+                            <p>Nu există clienți înregistrați.</p>
+                        </div>
+                    ) : (
+                        <div className="table-container">
+                            <table className="vehicles-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nr. Înmatriculare</th>
+                                        <th>Nr. Telefon</th>
+                                        <th>Valabilitate</th>
+                                        <th>Opțional</th>
+                                        <th>Data creării</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {clients.map((client, index) => (
+                                        <tr key={client.id || index}>
+                                            <td>{client.id || index + 1}</td>
+                                            <td className="nr-inmatriculare">
+                                                {client.nrInmatriculare}
+                                            </td>
+                                            <td>{client.nrTelefon}</td>
+                                            <td>
+                                                <span className={`validity ${client.valabilitate}`}>
+                                                    {getValidityLabel(client.valabilitate)}
+                                                </span>
+                                            </td>
+                                            <td>{client.optional || '-'}</td>
+                                            <td>{formatDate(client.createdAt)}</td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {clients.map((client, index) => (
-                                            <tr key={client.id || index}>
-                                                <td>{client.id || index + 1}</td>
-                                                <td className="nr-inmatriculare">
-                                                    {client.nrInmatriculare}
-                                                </td>
-                                                <td>{client.nrTelefon}</td>
-                                                <td>
-                                                    <span className={`validity ${client.valabilitate}`}>
-                                                        {getValidityLabel(client.valabilitate)}
-                                                    </span>
-                                                </td>
-                                                <td>{client.optional || '-'}</td>
-                                                <td>{formatDate(client.createdAt)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     );
 };

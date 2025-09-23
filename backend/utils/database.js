@@ -32,6 +32,42 @@ class Database {
         }
     }
 
+    // Funcții generale pentru orice fișier JSON
+    read(filename = 'accounts.json') {
+        try {
+            const filePath = path.join(__dirname, '../data', filename);
+            const data = fs.readFileSync(filePath, 'utf8');
+            return JSON.parse(data);
+        } catch (error) {
+            console.error(`Eroare la citirea fișierului ${filename}:`, error);
+            return {};
+        }
+    }
+
+    write(data, filename = 'accounts.json') {
+        try {
+            const filePath = path.join(__dirname, '../data', filename);
+
+            // Creează directorul dacă nu există
+            const dir = path.dirname(filePath);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+
+            // Face backup dacă fișierul există
+            if (fs.existsSync(filePath)) {
+                const backupPath = filePath + '.backup';
+                fs.copyFileSync(filePath, backupPath);
+            }
+
+            fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+            return true;
+        } catch (error) {
+            console.error(`Eroare la scrierea fișierului ${filename}:`, error);
+            return false;
+        }
+    }
+
     // Găsește utilizator după email
     findUserByEmail(email) {
         const data = this.readAccounts();
@@ -216,3 +252,16 @@ class Database {
 }
 
 module.exports = new Database();
+
+// Export functions for direct use
+module.exports.read = (filename = null) => {
+    const db = new Database();
+    if (filename === 'accounts.json') return db.readAccounts();
+    return db.read(filename);
+};
+
+module.exports.write = (filename, data) => {
+    const db = new Database();
+    if (filename === 'accounts.json') return db.writeAccounts(data);
+    return db.write(data, filename);
+};

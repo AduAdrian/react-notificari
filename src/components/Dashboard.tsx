@@ -11,7 +11,7 @@ const Dashboard: React.FC = () => {
                 <div className="header-content">
                     <h1>Dashboard</h1>
                     <div className="user-info">
-                        <span className="welcome-text">Bună ziua, {user?.name}!</span>
+                        <span className="welcome-text">Bună ziua, {user?.firstName} {user?.lastName}!</span>
                         <button onClick={logout} className="logout-button">
                             Deconectare
                         </button>
@@ -20,69 +20,9 @@ const Dashboard: React.FC = () => {
             </header>
 
             <main className="dashboard-main">
-                <div className="dashboard-grid">
-                    <div className="dashboard-card">
-                        <h3>Notificări</h3>
-                        <p>Gestionează notificările tale</p>
-                        <div className="card-stats">
-                            <span className="stat-number">5</span>
-                            <span className="stat-label">Active</span>
-                        </div>
-                    </div>
-
-                    <div className="dashboard-card">
-                        <h3>Mesaje</h3>
-                        <p>Vezi mesajele recente</p>
-                        <div className="card-stats">
-                            <span className="stat-number">12</span>
-                            <span className="stat-label">Noi</span>
-                        </div>
-                    </div>
-
-                    <div className="dashboard-card">
-                        <h3>Setări</h3>
-                        <p>Configurează aplicația</p>
-                        <div className="card-stats">
-                            <span className="stat-number">3</span>
-                            <span className="stat-label">Opțiuni</span>
-                        </div>
-                    </div>
-
-                    <div className="dashboard-card">
-                        <h3>Profil</h3>
-                        <p>Gestionează profilul tău</p>
-                        <div className="card-stats">
-                            <span className="stat-number">{user?.email}</span>
-                            <span className="stat-label">Email</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="recent-activity">
-                    <h3>Activitate recentă</h3>
-                    <div className="activity-list">
-                        <div className="activity-item">
-                            <div className="activity-icon">📧</div>
-                            <div className="activity-content">
-                                <p>Ai primit o notificare nouă</p>
-                                <span className="activity-time">Acum 5 minute</span>
-                            </div>
-                        </div>
-                        <div className="activity-item">
-                            <div className="activity-icon">👤</div>
-                            <div className="activity-content">
-                                <p>Profil actualizat cu succes</p>
-                                <span className="activity-time">Acum 1 oră</span>
-                            </div>
-                        </div>
-                        <div className="activity-item">
-                            <div className="activity-icon">⚙️</div>
-                            <div className="activity-content">
-                                <p>Setări modificate</p>
-                                <span className="activity-time">Ieri</span>
-                            </div>
-                        </div>
-                    </div>
+                <div className="welcome-message">
+                    <h2>Bun venit în aplicația de notificări!</h2>
+                    <p>Dashboard-ul tău este pregătit pentru utilizare.</p>
                 </div>
             </main>
         </div>

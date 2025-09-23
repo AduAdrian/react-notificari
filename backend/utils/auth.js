@@ -1,15 +1,16 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Secret pentru JWT (în producție ar trebui să fie în variabile de mediu)
-const JWT_SECRET = 'react_notificari_secret_key_2025';
-const JWT_EXPIRES_IN = '24h';
+// Configurație securizată din variabile de mediu
+const JWT_SECRET = process.env.JWT_SECRET || 'react_notificari_secret_key_2025';
+const JWT_EXPIRES_IN = process.env.SESSION_TIMEOUT || '24h';
+const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS) || 12;
 
 class AuthUtils {
     // Hash parola
     async hashPassword(password) {
         try {
-            const saltRounds = 12;
+            const saltRounds = BCRYPT_ROUNDS;
             return await bcrypt.hash(password, saltRounds);
         } catch (error) {
             throw new Error('Eroare la hash-uirea parolei');
