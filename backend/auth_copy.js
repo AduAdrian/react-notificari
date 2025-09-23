@@ -436,23 +436,20 @@ router.post('/login', [
             });
         }
 
-        // Verifică dacă contul este activ
+        // Verifică dacă contul este activ și verificat
         if (!user.isActive) {
             return res.status(401).json({
                 success: false,
                 message: 'Contul este dezactivat'
             });
         }
+
         if (!user.isVerified) {
-            return res.status(403).json({
+            return res.status(401).json({
                 success: false,
-                message: 'Contul nu este verificat',
-                requiresVerification: true,
-                email: user.email,
-                verificationMethod: user.verificationMethod
+                message: 'Contul nu a fost verificat. Verifică-ți email-ul sau SMS-urile.'
             });
         }
-
 
         // Verifică parola
         const isPasswordValid = await authUtils.verifyPassword(password, user.password);

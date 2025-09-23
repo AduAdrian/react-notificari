@@ -88,7 +88,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, onShowRegister }) => {
                 };
 
                 onLogin(userData, data.token);
-            } else {
+            } else if (data.requiresVerification) {
+                // Redirecționăm către pagina de verificare cu emailul
+                window.location.href = `/verify?email=${encodeURIComponent(formData.email)}&method=${data.verificationMethod || 'sms'}`;} else {
                 // Afișăm eroarea de la backend
                 setErrors({
                     email: data.message || 'Eroare la autentificare. Încercați din nou.'

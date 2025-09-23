@@ -141,6 +141,9 @@ class Database {
         // Generează ID nou pentru utilizatorul activ
         const newId = data.users.length > 0 ? Math.max(...data.users.map(u => u.id)) + 1 : 1;
 
+        // Verifică dacă este primul utilizator - îi acordă automat rolul de admin
+        const isFirstUser = data.users.length === 0;
+
         // Creează utilizatorul activ
         const newUser = {
             id: newId,
@@ -150,7 +153,7 @@ class Database {
             password: pendingUser.password,
             phone: pendingUser.phone,
             cui: pendingUser.cui,
-            role: pendingUser.role || 'user',
+            role: isFirstUser ? 'admin' : (pendingUser.role || 'user'),
             createdAt: new Date().toISOString(),
             lastLogin: null,
             isActive: true,
