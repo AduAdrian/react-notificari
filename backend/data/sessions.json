@@ -1,0 +1,37 @@
+{
+  "sessions": [
+    {
+      "id": "63fb0e95-0734-4078-b5e2-15c64e121712",
+      "userId": 1,
+      "refreshToken": null,
+      "expiresAt": "2025-09-24T17:29:35.828Z",
+      "createdAt": "2025-09-23T17:29:35.828Z",
+      "lastActivity": "2025-09-23T17:29:35.828Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "curl/7.68.0",
+      "isActive": true
+    },
+    {
+      "id": "372426d1-bafe-4e8e-8fed-bfc4a06b511c",
+      "userId": 1,
+      "refreshToken": null,
+      "expiresAt": "2025-09-24T17:36:36.611Z",
+      "createdAt": "2025-09-23T17:36:36.611Z",
+      "lastActivity": "2025-09-23T17:36:36.611Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "curl/7.68.0",
+      "isActive": true
+    },
+    {
+      "id": "8325a2dc-21a1-4bf3-b136-67b0f2e8e070",
+      "userId": 1,
+      "refreshToken": null,
+      "expiresAt": "2025-09-24T17:49:30.390Z",
+      "createdAt": "2025-09-23T17:49:30.390Z",
+      "lastActivity": "2025-09-23T17:49:30.390Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "isActive": true
+    }
+  ]
+}

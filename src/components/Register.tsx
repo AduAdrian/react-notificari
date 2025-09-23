@@ -12,7 +12,7 @@ interface RegisterFormData {
 }
 
 interface RegisterProps {
-    onRegisterSuccess: (userData: { email: string; name: string }, token: string) => void;
+    onRegisterSuccess: (userData: { id: number; email: string; firstName: string; lastName: string; role: string }) => void;
     onBackToLogin: () => void;
     onNeedVerification: (email: string, method: 'email' | 'sms') => void;
 }

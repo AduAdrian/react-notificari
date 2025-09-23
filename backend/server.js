@@ -3,6 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const { connectDB } = require('./config/database');
+
+// Conectare la MongoDB
+connectDB();
 
 // Global error handlers pentru a preveni crash-urile aplicației
 process.on('unhandledRejection', (reason, promise) => {
@@ -29,6 +33,11 @@ app.use(cors({
     origin: ['http://localhost:3000', 'http://localhost:3002'],
     credentials: true
 }));
+
+// Cookie parser middleware - NECESAR pentru sesiuni
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -39,11 +48,13 @@ app.use((req, res, next) => {
 });
 
 // Routes
-const authRoutes = require('./routes/auth');
+const authRoutes = require('./routes/auth-mongodb');
 const adminRoutes = require('./routes/admin');
+const vehicleRoutes = require('./routes/vehicles');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/vehicles', vehicleRoutes);
 
 // SMS Queue management endpoints
 app.get('/api/sms/queue/status', async (req, res) => {

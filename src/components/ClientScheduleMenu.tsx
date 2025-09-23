@@ -27,7 +27,7 @@ interface ClientScheduleMenuProps {
 export const ClientScheduleMenu: React.FC<ClientScheduleMenuProps> = ({
     userSpecific = true
 }) => {
-    const { user, token, logout } = useAuth();
+    const { user, logout } = useAuth();
     const [schedules, setSchedules] = useState<Schedule[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string>('');
@@ -35,7 +35,17 @@ export const ClientScheduleMenu: React.FC<ClientScheduleMenuProps> = ({
     const [showAddForm, setShowAddForm] = useState(false);
 
     // Form pentru programare nouă
-    const [scheduleForm, setScheduleForm] = useState({
+    const [scheduleForm, setScheduleForm] = useState<{
+        date: string;
+        time: string;
+        service: string;
+        vehicleDetails: {
+            plate: string;
+            brand: string;
+            model: string;
+        };
+        notes: string;
+    }>({
         date: '',
         time: '',
         service: '',
@@ -77,9 +87,7 @@ export const ClientScheduleMenu: React.FC<ClientScheduleMenuProps> = ({
 
         try {
             const response = await fetch('/api/client/schedule', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                credentials: 'include' // Folosește cookie-urile pentru autentificare
             });
 
             const data = await response.json();
@@ -124,9 +132,9 @@ export const ClientScheduleMenu: React.FC<ClientScheduleMenuProps> = ({
 
             const response = await fetch('/api/client/schedule', {
                 method: 'POST',
+                credentials: 'include', // Folosește cookie-urile pentru autentificare
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(scheduleForm)
             });
@@ -167,9 +175,7 @@ export const ClientScheduleMenu: React.FC<ClientScheduleMenuProps> = ({
         try {
             const response = await fetch(`/api/client/schedule/${scheduleId}`, {
                 method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                credentials: 'include' // Folosește cookie-urile pentru autentificare
             });
 
             if (!response.ok) {
@@ -248,6 +254,12 @@ export const ClientScheduleMenu: React.FC<ClientScheduleMenuProps> = ({
                     onClick={() => setActiveTab('history')}
                 >
                     Istoric Programări
+                </button>
+                <button
+                    className={activeTab === 'vehicle-registration' ? 'nav-btn active' : 'nav-btn'}
+                    onClick={() => setActiveTab('vehicle-registration')}
+                >
+                    Înmatriculare Vehicul
                 </button>
             </nav>
 
@@ -340,8 +352,37 @@ export const ClientScheduleMenu: React.FC<ClientScheduleMenuProps> = ({
                 {activeTab === 'history' && (
                     <ScheduleHistory
                         schedules={schedules.filter(s => s.status === 'completed' || s.status === 'cancelled')}
-                        userId={user.id}
+                        userId={user.id.toString()}
                     />
+                )}
+
+                {activeTab === 'vehicle-registration' && (
+                    <div className="vehicle-registration">
+                        <h2>Înmatriculare Vehicul</h2>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            alert('Vehicul înregistrat cu succes!');
+                        }}>
+                            <div className="form-group">
+                                <label htmlFor="plate">Număr Înmatriculare *</label>
+                                <input
+                                    type="text"
+                                    id="plate"
+                                    placeholder="ex: B123ABC"
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="validity">Valabilitate *</label>
+                                <input
+                                    type="date"
+                                    id="validity"
+                                    required
+                                />
+                            </div>
+                            <button type="submit" className="btn btn-primary">Înregistrează</button>
+                        </form>
+                    </div>
                 )}
             </main>
 
@@ -370,9 +411,21 @@ export const ClientScheduleMenu: React.FC<ClientScheduleMenuProps> = ({
 };
 
 // Sub-componente
+type ScheduleFormType = {
+    date: string;
+    time: string;
+    service: string;
+    vehicleDetails: {
+        plate: string;
+        brand: string;
+        model: string;
+    };
+    notes: string;
+};
+
 const PersonalScheduleForm: React.FC<{
-    scheduleForm: any;
-    setScheduleForm: (form: any) => void;
+    scheduleForm: ScheduleFormType;
+    setScheduleForm: (form: ScheduleFormType | ((prev: ScheduleFormType) => ScheduleFormType)) => void;
     onSubmit: (e: React.FormEvent) => void;
     loading: boolean;
     availableServices: string[];
@@ -382,7 +435,7 @@ const PersonalScheduleForm: React.FC<{
     const handleInputChange = (field: string, value: string) => {
         if (field.startsWith('vehicleDetails.')) {
             const vehicleField = field.split('.')[1];
-            setScheduleForm(prev => ({
+            setScheduleForm((prev: ScheduleFormType) => ({
                 ...prev,
                 vehicleDetails: {
                     ...prev.vehicleDetails,
@@ -390,7 +443,7 @@ const PersonalScheduleForm: React.FC<{
                 }
             }));
         } else {
-            setScheduleForm(prev => ({
+            setScheduleForm((prev: ScheduleFormType) => ({
                 ...prev,
                 [field]: value
             }));

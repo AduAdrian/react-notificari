@@ -4,7 +4,7 @@ import './VerificationCode.css';
 interface VerificationCodeProps {
     email: string;
     method: 'email' | 'sms';
-    onVerificationSuccess: (userData: { email: string; name: string }) => void;
+    onVerificationSuccess: (userData: { id: number; email: string; firstName: string; lastName: string; role: string }) => void;
     onBackToRegister: () => void;
 }
 
@@ -100,6 +100,7 @@ const VerificationCode: React.FC<VerificationCodeProps> = ({
         try {
             const response = await fetch('http://localhost:3001/api/auth/verify', {
                 method: 'POST',
+                credentials: 'include', // Include cookie-urile
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -112,12 +113,12 @@ const VerificationCode: React.FC<VerificationCodeProps> = ({
             const data = await response.json();
 
             if (data.success) {
-                // Salvăm token-ul în localStorage
-                localStorage.setItem('token', data.token);
-
                 const userData = {
+                    id: data.user.id,
                     email: data.user.email,
-                    name: `${data.user.firstName} ${data.user.lastName}`
+                    firstName: data.user.firstName,
+                    lastName: data.user.lastName,
+                    role: data.user.role
                 };
 
                 onVerificationSuccess(userData);
@@ -195,7 +196,7 @@ const VerificationCode: React.FC<VerificationCodeProps> = ({
                 </div>
 
                 <div className="verification-form">
-                    <form onSubmit={handleSubmit} role="form" aria-labelledby="verification-title" aria-describedby="verification-instructions">
+                    <form onSubmit={handleSubmit} aria-labelledby="verification-title" aria-describedby="verification-instructions">
                         <div className="code-inputs" onPaste={handlePaste}>
                             {code.map((digit, index) => (
                                 <input

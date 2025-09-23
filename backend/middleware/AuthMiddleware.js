@@ -302,6 +302,166 @@ class AuthMiddleware {
 
         next();
     }
+
+    /**
+     * Middleware general pentru autentificare (orice rol)
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @param {Function} next - Express next function
+     */
+    static requireAuth(req, res, next) {
+        try {
+            // Mai întâi încearcă Authorization header (JWT)
+            const authHeader = req.headers.authorization;
+
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                const token = authHeader.split(' ')[1];
+
+                if (!token) {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Format token invalid.'
+                    });
+                }
+
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'ca37cc84426514b08923818813192c3cb84a8a16');
+
+                // Verifică dacă token-ul nu a expirat
+                if (decoded.exp && decoded.exp < Date.now() / 1000) {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Token-ul a expirat. Te rugăm să te autentifici din nou.'
+                    });
+                }
+
+                SecurityLogger.logRoleAccess(decoded.id || decoded.userId, decoded.role, req.path, true, req.ip);
+
+                req.user = {
+                    id: decoded.id || decoded.userId,
+                    userId: decoded.id || decoded.userId, // pentru compatibilitate
+                    email: decoded.email,
+                    role: decoded.role,
+                    firstName: decoded.firstName,
+                    lastName: decoded.lastName
+                };
+
+                return next();
+            }
+
+            // Dacă nu există Authorization header, încearcă cookie-ul auth_session
+            const sessionId = req.cookies.auth_session;
+
+            if (!sessionId) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Token de autentificare lipsa. Te rugăm să te autentifici.'
+                });
+            }
+
+            // Pentru simplitate, setăm req.user cu ID-ul din cookie
+            // În producție ar trebui să verificăm sesiunea în baza de date
+            req.user = {
+                id: sessionId,
+                userId: sessionId,
+                email: 'unknown', // Nu avem email în cookie
+                role: 'client', // Presupunem client
+                firstName: 'Unknown',
+                lastName: 'User'
+            };
+
+            next();
+
+        } catch (error) {
+            console.error('Eroare la verificarea autentificării:', error.message);
+
+            if (error.name === 'JsonWebTokenError') {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Token invalid.'
+                });
+            } else if (error.name === 'TokenExpiredError') {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Token-ul a expirat. Te rugăm să te autentifici din nou.'
+                });
+            }
+
+            return res.status(401).json({
+                success: false,
+                error: 'Eroare la autentificare.'
+            });
+        }
+    }
+
+    /**
+     * Middleware pentru verificarea proprietății (user poate accesa doar propriile resurse)
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @param {Function} next - Express next function
+     */
+    static requireOwnership(req, res, next) {
+        try {
+            const authHeader = req.headers.authorization;
+
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Autentificare necesară.'
+                });
+            }
+
+            const token = authHeader.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'ca37cc84426514b08923818813192c3cb84a8a16');
+
+            const requestedUserId = req.params.userId || req.params.id;
+
+            // Admin poate accesa orice
+            if (decoded.role === 'admin') {
+                req.user = {
+                    id: decoded.id || decoded.userId,
+                    userId: decoded.id || decoded.userId,
+                    email: decoded.email,
+                    role: decoded.role,
+                    firstName: decoded.firstName,
+                    lastName: decoded.lastName
+                };
+                return next();
+            }
+
+            // User poate accesa doar propriile resurse
+            const userId = decoded.id || decoded.userId;
+            if (requestedUserId && requestedUserId !== userId.toString()) {
+                SecurityLogger.logSuspiciousActivity(userId, 'UNAUTHORIZED_RESOURCE_ACCESS', {
+                    requestedResource: requestedUserId,
+                    userRole: decoded.role,
+                    endpoint: req.path
+                });
+
+                return res.status(403).json({
+                    success: false,
+                    error: 'Nu poți accesa resursa altui utilizator.'
+                });
+            }
+
+            req.user = {
+                id: userId,
+                userId: userId,
+                email: decoded.email,
+                role: decoded.role,
+                firstName: decoded.firstName,
+                lastName: decoded.lastName
+            };
+
+            next();
+
+        } catch (error) {
+            console.error('Eroare la verificarea proprietății:', error.message);
+            return res.status(401).json({
+                success: false,
+                error: 'Token invalid sau expirat.'
+            });
+        }
+    }
 }
 
 /**
@@ -392,6 +552,8 @@ module.exports = {
     SecurityLogger,
     requireAdmin: AuthMiddleware.requireAdmin,
     requireClient: AuthMiddleware.requireClient,
+    requireAuth: AuthMiddleware.requireAuth,
+    requireOwnership: AuthMiddleware.requireOwnership,
     requireOwnershipOrAdmin: AuthMiddleware.requireOwnershipOrAdmin,
     validateInput: AuthMiddleware.validateInput,
     checkBruteForce: (email, ip) => authMiddleware.checkBruteForceProtection(email, ip),

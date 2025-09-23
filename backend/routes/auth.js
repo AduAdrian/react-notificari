@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const fetch = require('node-fetch');
-const database = require('../utils/database');
+const mongoDatabase = require('../utils/mongoDatabase');
 const authUtils = require('../utils/auth');
 const verificationService = require('../utils/verification');
 const {
@@ -59,7 +59,7 @@ router.post('/login', [
         }
 
         // Caută utilizatorul în database
-        const user = database.getUserByEmail(email);
+        const user = await mongoDatabase.getUserByEmail(email);
 
         if (!user) {
             recordFailedAttempt(email, req.ip);
@@ -71,7 +71,7 @@ router.post('/login', [
         }
 
         // Verifică parola
-        const isPasswordValid = await authUtils.comparePassword(password, user.password);
+        const isPasswordValid = await authUtils.verifyPassword(password, user.password);
 
         if (!isPasswordValid) {
             recordFailedAttempt(email, req.ip);
@@ -95,15 +95,47 @@ router.post('/login', [
         // Reset failed attempts după login reușit
         resetFailedAttempts(email, req.ip);
 
-        // Generează JWT token
-        const tokenPayload = {
-            userId: user.id,
-            email: user.email,
-            name: `${user.firstName} ${user.lastName}`.trim(),
-            role: user.role || 'client' // Default role client
-        };
+        // Creează sesiune în baza de date
+        const sessionResult = database.createSession(user.id, {
+            ipAddress: req.ip,
+            userAgent: req.get('user-agent')
+        });
 
-        const token = authUtils.generateToken(tokenPayload);
+        if (!sessionResult.success) {
+            console.error('Eroare la crearea sesiunii:', sessionResult.message);
+            return res.status(500).json({
+                success: false,
+                error: 'Eroare internă la autentificare.'
+            });
+        }
+
+        // Setează cookie HttpOnly cu session_id
+        res.cookie('session_id', sessionResult.sessionId, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000 // 24 ore
+        });
+
+        // Set remember me cookie dacă este cerut (refresh token)
+        if (rememberMe) {
+            const refreshToken = require('crypto').randomUUID();
+            // Actualizează sesiunea cu refresh token
+            const data = database.readSessions();
+            const sessionIndex = data.sessions.findIndex(s => s.id === sessionResult.sessionId);
+            if (sessionIndex !== -1) {
+                data.sessions[sessionIndex].refreshToken = refreshToken;
+                data.sessions[sessionIndex].expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 zile
+                database.writeSessions(data);
+            }
+
+            res.cookie('refresh_token', refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 30 * 24 * 60 * 60 * 1000 // 30 zile
+            });
+        }
 
         // OWASP 4.5.3 - Role-based redirection
         let redirectUrl;
@@ -120,21 +152,9 @@ router.post('/login', [
         SecurityLogger.logAuthAttempt(email, true, req.ip, req.get('user-agent'));
         SecurityLogger.logRoleAccess(user.id, user.role, '/login', true, req.ip);
 
-        // Set remember me cookie dacă este cerut
-        if (rememberMe) {
-            const rememberToken = authUtils.generateRememberToken(user.id);
-            res.cookie('remember_token', rememberToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                maxAge: 30 * 24 * 60 * 60 * 1000 // 30 zile
-            });
-        }
-
         res.json({
             success: true,
             message: `Autentificare reușită! ${accessLevel}`,
-            token,
             user: {
                 id: user.id,
                 firstName: user.firstName,
@@ -168,6 +188,130 @@ router.post('/login', [
         res.status(500).json({
             success: false,
             error: 'Eroare internă de server.'
+        });
+    }
+});
+
+/**
+ * GET /api/auth/session
+ * Verifică sesiunea curentă și returnează datele utilizatorului
+ */
+router.get('/session', async (req, res) => {
+    try {
+        const sessionId = req.cookies.session_id;
+
+        if (!sessionId) {
+            return res.status(401).json({
+                success: false,
+                authenticated: false,
+                error: 'Nicio sesiune activă'
+            });
+        }
+
+        // Găsește sesiunea în baza de date
+        const session = database.findSessionById(sessionId);
+
+        if (!session) {
+            // Șterge cookie-ul invalid
+            res.clearCookie('session_id');
+            return res.status(401).json({
+                success: false,
+                authenticated: false,
+                error: 'Sesiune invalidă'
+            });
+        }
+
+        // Verifică dacă sesiunea a expirat
+        if (new Date(session.expiresAt) <= new Date()) {
+            // Dezactivează sesiunea expirată
+            database.deactivateSession(sessionId);
+            res.clearCookie('session_id');
+            return res.status(401).json({
+                success: false,
+                authenticated: false,
+                error: 'Sesiune expirată'
+            });
+        }
+
+        // Actualizează activitatea sesiunii
+        database.updateSessionActivity(sessionId);
+
+        // Găsește utilizatorul
+        const user = database.findUserById(session.userId);
+
+        if (!user || !user.isActive) {
+            // Dezactivează sesiunea pentru utilizator invalid
+            database.deactivateSession(sessionId);
+            res.clearCookie('session_id');
+            return res.status(401).json({
+                success: false,
+                authenticated: false,
+                error: 'Utilizator invalid'
+            });
+        }
+
+        // Returnează datele utilizatorului
+        res.json({
+            success: true,
+            authenticated: true,
+            user: {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                role: user.role || 'client'
+            },
+            permissions: user.role === 'admin' ? [
+                'manage_users',
+                'view_all_schedules',
+                'system_settings',
+                'cpanel_access',
+                'security_logs'
+            ] : [
+                'view_own_schedule',
+                'add_schedule',
+                'edit_own_profile',
+                'view_own_notifications'
+            ]
+        });
+
+    } catch (error) {
+        console.error('Eroare verificare sesiune:', error);
+        res.status(500).json({
+            success: false,
+            authenticated: false,
+            error: 'Eroare internă de server'
+        });
+    }
+});
+
+/**
+ * POST /api/auth/logout
+ * Deconectează utilizatorul și dezactivează sesiunea
+ */
+router.post('/logout', async (req, res) => {
+    try {
+        const sessionId = req.cookies.session_id;
+
+        if (sessionId) {
+            // Dezactivează sesiunea
+            database.deactivateSession(sessionId);
+        }
+
+        // Șterge cookie-urile
+        res.clearCookie('session_id');
+        res.clearCookie('refresh_token');
+
+        res.json({
+            success: true,
+            message: 'Deconectare reușită'
+        });
+
+    } catch (error) {
+        console.error('Eroare logout:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Eroare internă de server'
         });
     }
 });

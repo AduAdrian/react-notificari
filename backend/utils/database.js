@@ -4,6 +4,7 @@ const path = require('path');
 class Database {
     constructor() {
         this.accountsPath = path.join(__dirname, '../data/accounts.json');
+        this.sessionsPath = path.join(__dirname, '../data/sessions.json');
     }
 
     // Citește fișierul de conturi
@@ -21,13 +22,27 @@ class Database {
         }
     }
 
-    // Scrie în fișierul de conturi
-    writeAccounts(data) {
+    // Citește fișierul de sesiuni
+    readSessions() {
         try {
-            fs.writeFileSync(this.accountsPath, JSON.stringify(data, null, 2));
+            const data = fs.readFileSync(this.sessionsPath, 'utf8');
+            const parsed = JSON.parse(data);
+            // Asigură-te că avem structura corectă
+            if (!parsed.sessions) parsed.sessions = [];
+            return parsed;
+        } catch (error) {
+            console.error('Eroare la citirea sesiunilor:', error);
+            return { sessions: [] };
+        }
+    }
+
+    // Scrie în fișierul de sesiuni
+    writeSessions(data) {
+        try {
+            fs.writeFileSync(this.sessionsPath, JSON.stringify(data, null, 2));
             return true;
         } catch (error) {
-            console.error('Eroare la scrierea conturilor:', error);
+            console.error('Eroare la scrierea sesiunilor:', error);
             return false;
         }
     }
@@ -68,10 +83,26 @@ class Database {
         }
     }
 
+    // Scrie în fișierul de conturi
+    writeAccounts(data) {
+        try {
+            fs.writeFileSync(this.accountsPath, JSON.stringify(data, null, 2));
+            return true;
+        } catch (error) {
+            console.error('Eroare la scrierea conturilor:', error);
+            return false;
+        }
+    }
+
     // Găsește utilizator după email
     findUserByEmail(email) {
         const data = this.readAccounts();
         return data.users.find(user => user.email.toLowerCase() === email.toLowerCase());
+    }
+
+    // Alias pentru compatibilitate
+    getUserByEmail(email) {
+        return this.findUserByEmail(email);
     }
 
     // Găsește utilizator după ID
@@ -251,6 +282,127 @@ class Database {
             adminUsers,
             regularUsers: totalUsers - adminUsers
         };
+    }
+
+    // === FUNCȚII PENTRU SESIUNI ===
+
+    // Creează o sesiune nouă
+    createSession(userId, sessionData = {}) {
+        const data = this.readSessions();
+        const sessionId = require('crypto').randomUUID();
+
+        const session = {
+            id: sessionId,
+            userId: parseInt(userId),
+            refreshToken: sessionData.refreshToken || null,
+            expiresAt: sessionData.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 ore
+            createdAt: new Date().toISOString(),
+            lastActivity: new Date().toISOString(),
+            ipAddress: sessionData.ipAddress || null,
+            userAgent: sessionData.userAgent || null,
+            isActive: true
+        };
+
+        data.sessions.push(session);
+
+        if (this.writeSessions(data)) {
+            return { success: true, sessionId, session };
+        }
+
+        return { success: false, message: 'Eroare la crearea sesiunii' };
+    }
+
+    // Găsește sesiune după ID
+    findSessionById(sessionId) {
+        const data = this.readSessions();
+        return data.sessions.find(session =>
+            session.id === sessionId && session.isActive
+        );
+    }
+
+    // Găsește sesiuni active ale unui utilizator
+    findActiveSessionsByUserId(userId) {
+        const data = this.readSessions();
+        return data.sessions.filter(session =>
+            session.userId === parseInt(userId) &&
+            session.isActive &&
+            new Date(session.expiresAt) > new Date()
+        );
+    }
+
+    // Actualizează activitatea sesiunii
+    updateSessionActivity(sessionId) {
+        const data = this.readSessions();
+        const sessionIndex = data.sessions.findIndex(session => session.id === sessionId);
+
+        if (sessionIndex !== -1) {
+            data.sessions[sessionIndex].lastActivity = new Date().toISOString();
+            return this.writeSessions(data);
+        }
+
+        return false;
+    }
+
+    // Dezactivează o sesiune
+    deactivateSession(sessionId) {
+        const data = this.readSessions();
+        const sessionIndex = data.sessions.findIndex(session => session.id === sessionId);
+
+        if (sessionIndex !== -1) {
+            data.sessions[sessionIndex].isActive = false;
+            return this.writeSessions(data);
+        }
+
+        return false;
+    }
+
+    // Dezactivează toate sesiunile unui utilizator
+    deactivateAllUserSessions(userId) {
+        const data = this.readSessions();
+        let updated = false;
+
+        data.sessions.forEach(session => {
+            if (session.userId === parseInt(userId) && session.isActive) {
+                session.isActive = false;
+                updated = true;
+            }
+        });
+
+        if (updated) {
+            return this.writeSessions(data);
+        }
+
+        return false;
+    }
+
+    // Curăță sesiunile expirate
+    cleanupExpiredSessions() {
+        const data = this.readSessions();
+        const now = new Date();
+        const initialCount = data.sessions.length;
+
+        data.sessions = data.sessions.filter(session => {
+            const expiresAt = new Date(session.expiresAt);
+            return session.isActive && expiresAt > now;
+        });
+
+        const cleanedCount = initialCount - data.sessions.length;
+
+        if (cleanedCount > 0) {
+            this.writeSessions(data);
+            console.log(`Curățate ${cleanedCount} sesiuni expirate`);
+        }
+
+        return cleanedCount;
+    }
+
+    // Obține toate sesiunile active (pentru admin)
+    getAllActiveSessions() {
+        const data = this.readSessions();
+        return data.sessions.filter(session =>
+            session.isActive &&
+            new Date(session.expiresAt) > new Date()
+        );
     }
 }
 

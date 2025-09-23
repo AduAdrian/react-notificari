@@ -178,6 +178,106 @@
     font-size: 12px;
 }
 
+/* Add these styles to your existing Dashboard.css */
+.dashboard-nav {
+    background: white;
+    padding: 15px 0;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+}
+
+.dashboard-nav button {
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: none;
+    background: none;
+    color: #4a5568;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid transparent;
+}
+
+.dashboard-nav button.active {
+    color: #667eea;
+    border-bottom: 2px solid #667eea;
+}
+
+.dashboard-nav button:hover {
+    color: #667eea;
+}
+
+.clients-section {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.clients-section h2 {
+    color: #2d3748;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.clients-section form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+    background: #f7fafc;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.clients-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.clients-table th,
+.clients-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.clients-table th {
+    background: #f7fafc;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.clients-table tr:hover {
+    background: #f7fafc;
+}
+
+.clients-table td {
+    color: #2d3748;
+    font-size: 14px;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+.no-data {
+    text-align: center;
+    color: #718096;
+    margin-top: 20px;
+    font-style: italic;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .header-content {
@@ -210,6 +310,27 @@
 
     .recent-activity {
         padding: 20px;
+    }
+
+    .dashboard-nav {
+        flex-wrap: wrap;
+    }
+
+    .dashboard-nav button {
+        margin: 5px;
+    }
+
+    .clients-section form {
+        grid-template-columns: 1fr;
+    }
+
+    .clients-table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    .actions {
+        flex-wrap: wrap;
     }
 }
 
@@ -244,4 +365,228 @@
         opacity: 1;
         transform: translateX(0);
     }
+}
+
+/* Welcome Message Styling */
+.welcome-message {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.welcome-message h2 {
+    color: #2d3748;
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.welcome-message p {
+    color: #718096;
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Form Section Styling */
+.form-section {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.form-section h2 {
+    color: #2d3748;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 25px 0;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #edf2f7;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: #4a5568;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #2d3748;
+    background: #fff;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+.form-group input:disabled {
+    background-color: #f7fafc;
+    color: #a0aec0;
+    cursor: not-allowed;
+}
+
+.form-group input::placeholder {
+    color: #a0aec0;
+}
+
+/* CRUD Buttons Styling */
+.crud-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 2px solid #edf2f7;
+}
+
+.crud-buttons button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-width: 120px;
+    position: relative;
+    overflow: hidden;
+}
+
+.crud-buttons button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.crud-buttons button:hover::before {
+    left: 100%;
+}
+
+.add-button {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+}
+
+.add-button:hover {
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+}
+
+.update-button {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+}
+
+.update-button:hover {
+    background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(66, 153, 225, 0.4);
+}
+
+.edit-button {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(237, 137, 54, 0.3);
+}
+
+.edit-button:hover {
+    background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(237, 137, 54, 0.4);
+}
+
+.delete-button {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+}
+
+.delete-button:hover {
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
+}
+
+.crud-buttons button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive pentru butoane */
+@media (max-width: 768px) {
+    .crud-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .crud-buttons button {
+        width: 100%;
+        max-width: 250px;
+    }
+
+    .form-section {
+        padding: 20px;
+    }
+
+    .welcome-message {
+        padding: 20px;
+    }
+}
+
+/* Animații pentru butoane */
+@keyframes buttonPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+    }
+}
+
+.crud-buttons button:focus {
+    animation: buttonPulse 1.5s infinite;
 }

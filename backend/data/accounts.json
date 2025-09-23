@@ -1,37 +1,37 @@
 {
-  "pendingUsers": [],
   "users": [
     {
       "id": 1,
       "firstName": "Adrian",
       "lastName": "Avram",
       "email": "aduadu321@gmail.com",
-      "password": "$2a$12$4wFs0tbt2qc/dZpe6qtlm./o/t.kgPp1b.iBDsBQGzDGR0SJx/uAG",
+      "password": "$2a$12$CSlwwmClZUQAwria2JPQWetv4GwvK.TjKW2a1paNN.oTbnWPp7fLG",
       "phone": "+40756596565",
       "role": "admin",
-      "createdAt": "2025-09-23T08:40:52.596Z",
-      "lastLogin": null,
-      "isActive": true,
-      "isVerified": false,
-      "verificationCode": "898688",
-      "verificationExpiry": "2025-09-23T09:03:46.804Z",
-      "verificationMethod": "sms"
-    },
-    {
-      "id": 2,
-      "firstName": "Adrian",
-      "lastName": "Avram",
-      "email": "admin@misedainspectsrl.ro",
-      "password": "$2a$12$ZtIn8y8mAonuO/57Dp1YtOLGrqmD4zSZPsvRoZBubeiwEDOzzTLfW",
-      "phone": "+40756596565",
-      "role": "user",
-      "createdAt": "2025-09-23T08:46:05.335Z",
+      "createdAt": "2025-09-23T17:22:12.813Z",
       "lastLogin": null,
       "isActive": true,
       "isVerified": true,
       "verificationCode": null,
       "verificationExpiry": null,
-      "verificationMethod": "sms"
+      "verificationMethod": "email"
+    }
+  ],
+  "pendingUsers": [
+    {
+      "id": 1758649671787,
+      "firstName": "Adad",
+      "lastName": "Ad",
+      "email": "adu_sv2009@yaahoo.com",
+      "password": "$2a$12$amO9NSvpT5xhGfMXYEOnB.6G0Chxaj3nxPDdHJdLbu0Fh.BHjWp.e",
+      "phone": "+40756596565",
+      "verificationCode": "154417",
+      "verificationExpiry": "2025-09-23T18:02:51.786Z",
+      "verificationMethod": "sms",
+      "role": "user",
+      "createdAt": "2025-09-23T17:47:51.787Z",
+      "isActive": false,
+      "isVerified": false
     }
   ]
 }

@@ -3,21 +3,18 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 interface User {
     id: number;
     email: string;
-    name: string;
     firstName: string;
     lastName: string;
     role: string;
-    phone: string;
-    isVerified: boolean;
 }
 
 interface AuthContextType {
     user: User | null;
-    token: string | null;
     isAuthenticated: boolean;
-    login: (userData: User, authToken: string) => void;
-    logout: () => void;
+    login: (userData: User) => void;
+    logout: () => Promise<void>;
     isLoading: boolean;
+    checkSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,61 +25,61 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Verificăm localStorage la încărcarea aplicației
-    useEffect(() => {
-        const checkAuthStatus = () => {
-            try {
-                const savedUser = localStorage.getItem('user');
-                const savedToken = localStorage.getItem('token');
-                if (savedUser && savedToken) {
-                    const userData = JSON.parse(savedUser);
-                    setUser(userData);
-                    setToken(savedToken);
-                }
-            } catch (error) {
-                console.error('Eroare la citirea datelor din localStorage:', error);
-                localStorage.removeItem('user');
-                localStorage.removeItem('token');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        checkAuthStatus();
-    }, []);
-
-    const login = (userData: User, authToken: string) => {
-        setUser(userData);
-        setToken(authToken);
+    // Verificăm sesiunea curentă la încărcarea aplicației
+    const checkSession = async () => {
         try {
-            localStorage.setItem('user', JSON.stringify(userData));
-            localStorage.setItem('token', authToken);
+            const response = await fetch('/api/auth/session', {
+                credentials: 'include' // Include cookie-urile în request
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.authenticated) {
+                    setUser(data.user);
+                } else {
+                    setUser(null);
+                }
+            } else {
+                setUser(null);
+            }
         } catch (error) {
-            console.error('Eroare la salvarea în localStorage:', error);
+            console.error('Eroare la verificarea sesiunii:', error);
+            setUser(null);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const logout = () => {
-        setUser(null);
-        setToken(null);
+    useEffect(() => {
+        checkSession();
+    }, []);
+
+    const login = (userData: User) => {
+        setUser(userData);
+    };
+
+    const logout = async () => {
         try {
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
         } catch (error) {
-            console.error('Eroare la ștergerea din localStorage:', error);
+            console.error('Eroare la logout:', error);
+        } finally {
+            setUser(null);
         }
     };
 
     const value: AuthContextType = {
         user,
-        token,
-        isAuthenticated: !!user && !!token,
+        isAuthenticated: !!user,
         login,
         logout,
-        isLoading
+        isLoading,
+        checkSession
     };
 
     return (

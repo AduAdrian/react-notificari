@@ -33,7 +33,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     cpanelAccess = true,
     fullPermissions = true
 }) => {
-    const { user, token, logout } = useAuth();
+    const { user, logout } = useAuth();
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -68,9 +68,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         try {
             setLoading(true);
             const response = await axios.get('/api/admin/cpanel', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                withCredentials: true // Folosește cookie-urile pentru autentificare
             });
 
             if (response.data.access === 'full') {
@@ -93,8 +91,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const loadClients = async () => {
         try {
             const response = await fetch('/api/admin/clients', {
+                credentials: 'include', // Folosește cookie-urile pentru autentificare
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -114,8 +112,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         try {
             const response = await fetch('/api/admin/clients', {
                 method: 'POST',
+                credentials: 'include', // Folosește cookie-urile pentru autentificare
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(clientForm)

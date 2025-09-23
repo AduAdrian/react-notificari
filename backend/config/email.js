@@ -8,12 +8,13 @@ const emailConfig = {
         secure: true, // SSL
         auth: {
             user: 'noreply@misedainspectsrl.ro',
-            pass: process.env.EMAIL_PASSWORD || 'your-email-password-here' // Setează în .env      
+            pass: 'Kreator12345!' // Updated password
         },
         tls: {
             rejectUnauthorized: false // Pentru self-signed certificates
         }
-    },    // Configurație SMS API (smsadvert.ro)
+    },
+    // Configurație SMS API (smsadvert.ro)
     sms: {
         apiUrl: 'https://www.smsadvert.ro/api/sms/', // URL oficial cu trailing slash
         token: process.env.SMS_API_TOKEN,

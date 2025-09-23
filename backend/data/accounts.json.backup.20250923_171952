@@ -1,0 +1,68 @@
+{
+  "pendingUsers": [
+    {
+      "id": 1758647460687,
+      "firstName": "Test",
+      "lastName": "User",
+      "email": "test123@example.com",
+      "password": "$2a$12$DWL.btJYvOw8BOgfWOAJFO/l1d6ZcG5YfN0Kogmsoe2AHQXOhAkse",
+      "phone": "+40700123456",
+      "verificationCode": "142920",
+      "verificationExpiry": "2025-09-23T17:26:00.687Z",
+      "verificationMethod": "email",
+      "role": "user",
+      "createdAt": "2025-09-23T17:11:00.687Z",
+      "isActive": false,
+      "isVerified": false
+    },
+    {
+      "id": 1758647523084,
+      "firstName": "Test",
+      "lastName": "Connection",
+      "email": "test-connection@example.com",
+      "password": "$2a$12$D38rdJWsq.5mX5xulNdVle7M/NuMmMl2YuqKdtsMJfYjor8xb.pmG",
+      "phone": "+40700111222",
+      "verificationCode": "738358",
+      "verificationExpiry": "2025-09-23T17:27:03.084Z",
+      "verificationMethod": "email",
+      "role": "user",
+      "createdAt": "2025-09-23T17:12:03.084Z",
+      "isActive": false,
+      "isVerified": false
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "firstName": "Adrian",
+      "lastName": "Avram",
+      "email": "aduadu321@gmail.com",
+      "password": "$2a$12$4wFs0tbt2qc/dZpe6qtlm./o/t.kgPp1b.iBDsBQGzDGR0SJx/uAG",
+      "phone": "+40756596565",
+      "role": "admin",
+      "createdAt": "2025-09-23T08:40:52.596Z",
+      "lastLogin": null,
+      "isActive": true,
+      "isVerified": false,
+      "verificationCode": "898688",
+      "verificationExpiry": "2025-09-23T09:03:46.804Z",
+      "verificationMethod": "sms"
+    },
+    {
+      "id": 2,
+      "firstName": "Adrian",
+      "lastName": "Avram",
+      "email": "admin@misedainspectsrl.ro",
+      "password": "$2a$12$ZtIn8y8mAonuO/57Dp1YtOLGrqmD4zSZPsvRoZBubeiwEDOzzTLfW",
+      "phone": "+40756596565",
+      "role": "user",
+      "createdAt": "2025-09-23T08:46:05.335Z",
+      "lastLogin": null,
+      "isActive": true,
+      "isVerified": true,
+      "verificationCode": null,
+      "verificationExpiry": null,
+      "verificationMethod": "sms"
+    }
+  ]
+}
