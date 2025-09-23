@@ -1,9 +1,15 @@
-import { expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+test('renders login page when not authenticated', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeDefined();
+  const welcomeElement = screen.getByText(/Bine ai venit!/i);
+  expect(welcomeElement).toBeDefined();
+});
+
+test('localStorage is cleared before test', () => {
+  // Verifică că localStorage este gol la începutul testului
+  expect(localStorage.getItem('token')).toBeNull();
+  expect(localStorage.getItem('user')).toBeNull();
+  expect(localStorage.length).toBe(0);
 });
