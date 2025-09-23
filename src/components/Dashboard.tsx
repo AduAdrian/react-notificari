@@ -226,11 +226,13 @@ const Dashboard: React.FC = () => {
                                     id="validity"
                                     value={formData.validity}
                                     onChange={handleValidityChange}
+                                    className="validity-select"
+                                    title="Selectează perioada de validitate - opțiuni predefinite sunt limitate"
                                 >
-                                    <option value="6 luni">6 luni</option>
-                                    <option value="1 an">1 an</option>
-                                    <option value="2 ani">2 ani</option>
-                                    <option value="manual">Manual</option>
+                                    <option value="6 luni" className="predefined-option">6 luni</option>
+                                    <option value="1 an" className="predefined-option">1 an</option>
+                                    <option value="2 ani" className="predefined-option">2 ani</option>
+                                    <option value="manual" className="manual-option">Manual (Deblocat)</option>
                                 </select>
                             </div>
                             {manualEdit && (

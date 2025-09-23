@@ -345,13 +345,21 @@ router.delete('/vehicles/:id', (req, res) => {
 // POST /admin/clients - Adaugă un client nou
 router.post('/clients', (req, res) => {
     try {
-        const { nrInmatriculare, nrTelefon, valabilitate, optional } = req.body;
+        const { nrInmatriculare, nrTelefon, valabilitate, optional, manualDate } = req.body;
 
         // Validări de bază
         if (!nrInmatriculare || !nrTelefon || !valabilitate) {
             return res.status(400).json({
                 success: false,
                 message: 'Numărul de înmatriculare, telefon și validitatea sunt obligatorii'
+            });
+        }
+
+        // Validare pentru data manuală
+        if (valabilitate === 'manual' && !manualDate) {
+            return res.status(400).json({
+                success: false,
+                message: 'Data manuală este obligatorie pentru valabilitatea manuală'
             });
         }
 
@@ -372,21 +380,26 @@ router.post('/clients', (req, res) => {
         }
 
         // Calculează data de expirare
-        let expirationDate = new Date();
-        switch (valabilitate) {
-            case '6months':
-                expirationDate.setMonth(expirationDate.getMonth() + 6);
-                break;
-            case '1year':
-                expirationDate.setFullYear(expirationDate.getFullYear() + 1);
-                break;
-            case '2years':
-                expirationDate.setFullYear(expirationDate.getFullYear() + 2);
-                break;
-            case 'today':
-            default:
-                // Păstrează data de azi
-                break;
+        let expirationDate;
+        if (valabilitate === 'manual') {
+            expirationDate = new Date(manualDate);
+        } else {
+            expirationDate = new Date();
+            switch (valabilitate) {
+                case '6months':
+                    expirationDate.setMonth(expirationDate.getMonth() + 6);
+                    break;
+                case '1year':
+                    expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+                    break;
+                case '2years':
+                    expirationDate.setFullYear(expirationDate.getFullYear() + 2);
+                    break;
+                case 'today':
+                default:
+                    // Păstrează data de azi
+                    break;
+            }
         }
 
         const newClient = {

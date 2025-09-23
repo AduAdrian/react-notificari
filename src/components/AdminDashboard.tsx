@@ -44,9 +44,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const [clientForm, setClientForm] = useState({
         nrInmatriculare: '',
         nrTelefon: '',
-        valabilitate: 'today',
-        optional: ''
+        valabilitate: '6months', // Start cu prima opțiune predefinită
+        optional: '',
+        manualDate: '' // Pentru data manuală
     });
+
+    const [manualDateEnabled, setManualDateEnabled] = useState(false);
 
     // OWASP 4.5.3 - Role verification cu double-check
     useEffect(() => {
@@ -106,17 +109,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         }
     };
 
+    const handleValidityChange = (value: string) => {
+        setClientForm({
+            ...clientForm,
+            valabilitate: value
+        });
+        setManualDateEnabled(value === 'manual');
+    };
+
     const handleAddClient = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         try {
+            // Pregătește datele pentru trimitere
+            const requestData = {
+                ...clientForm
+            };
+
+            // Pentru valabilitate manuală, include data
+            if (clientForm.valabilitate === 'manual') {
+                if (!clientForm.manualDate) {
+                    alert('Te rugăm să selectezi o dată pentru valabilitatea manuală.');
+                    return;
+                }
+                requestData.manualDate = clientForm.manualDate;
+            }
+
             const response = await fetch('/api/admin/clients', {
                 method: 'POST',
                 credentials: 'include', // Folosește cookie-urile pentru autentificare
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(clientForm)
+                body: JSON.stringify(requestData)
             });
 
             const data = await response.json();
@@ -125,9 +150,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 setClientForm({
                     nrInmatriculare: '',
                     nrTelefon: '',
-                    valabilitate: 'today',
-                    optional: ''
+                    valabilitate: '6months', // Reset to first predefined option
+                    optional: '',
+                    manualDate: ''
                 });
+                setManualDateEnabled(false);
                 alert('Client adăugat cu succes!');
             } else {
                 alert(data.message);
@@ -226,19 +253,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <label>Valabilitate:</label>
                                 <select
                                     value={clientForm.valabilitate}
-                                    onChange={(e) => setClientForm({
-                                        ...clientForm,
-                                        valabilitate: e.target.value
-                                    })}
+                                    onChange={(e) => handleValidityChange(e.target.value)}
                                     required
-                                    title="Selectează perioada de validitate"
+                                    title="Selectează perioada de validitate - opțiuni predefinite sunt limitate"
+                                    className="validity-select-admin"
                                 >
-                                    <option value="today">Astăzi</option>
-                                    <option value="6months">6 luni</option>
-                                    <option value="1year">1 an</option>
-                                    <option value="2years">2 ani</option>
+                                    <option value="6months" className="predefined-option">6 luni</option>
+                                    <option value="1year" className="predefined-option">1 an</option>
+                                    <option value="2years" className="predefined-option">2 ani</option>
+                                    <option value="manual" className="manual-option">Manual (Deblocat)</option>
                                 </select>
                             </div>
+                            {manualDateEnabled && (
+                                <div className="form-group">
+                                    <label>Data Expirare Manuală:</label>
+                                    <input
+                                        type="date"
+                                        value={clientForm.manualDate}
+                                        onChange={(e) => setClientForm({
+                                            ...clientForm,
+                                            manualDate: e.target.value
+                                        })}
+                                        required={manualDateEnabled}
+                                        title="Selectează data de expirare manuală"
+                                        className="manual-date-input"
+                                    />
+                                </div>
+                            )}
                             <div className="form-group">
                                 <label>Câmp Opțional:</label>
                                 <input
