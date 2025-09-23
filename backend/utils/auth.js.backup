@@ -1,0 +1,23 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "firstName": "Admin",
+      "lastName": "Administrator",
+      "email": "admin@misedainspectsrl.ro",
+      "password": "$2a$12$kE2yCulJO3VNcL08KkTmNuMznTzhfMlUw5p5aYWmj33EbSOO0unve",
+      "phone": "+40756596565",
+      "role": "admin",
+      "createdAt": "2025-09-22T16:30:00.000Z",
+      "lastLogin": "2025-09-22T16:51:06.444Z",
+      "isActive": true,
+      "isVerified": true,
+      "emailVerified": true,
+      "smsVerified": true,
+      "verificationCode": null,
+      "verificationExpiry": null,
+      "verificationMethod": "both"
+    }
+  ],
+  "pendingUsers": []
+}

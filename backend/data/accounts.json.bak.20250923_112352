@@ -1,0 +1,23 @@
+{
+    "users":  [
+                  {
+                      "id":  1,
+                      "firstName":  "Adrian",
+                      "lastName":  "Avram",
+                      "email":  "aduadu321@gmail.com",
+                      "password":  "$2a$12$2OSEpeuhW0cEgdabGmmPYOxJS6ifj49c9JwlVlezkulCJuoRlGkRy",
+                      "phone":  "+40756596565",
+                      "role":  "admin",
+                      "createdAt":  "2025-09-22T17:29:08.363Z",
+                      "lastLogin":  null,
+                      "isActive":  true,
+                      "isVerified":  true,
+                      "verificationCode":  null,
+                      "verificationExpiry":  null,
+                      "verificationMethod":  "sms"
+                  }
+              ],
+    "pendingUsers":  [
+
+                     ]
+}

@@ -1,12 +1,78 @@
-# GitHub Codespaces ♥️ React
+# 🔐 React Notificări - Sistem de Autentificare cu Verificare 2FA
 
-Welcome to your shiny new Codespace running React! We've got everything fired up and running for you to explore React.
+Aplicație React cu backend Node.js pentru autentificare securizată folosind verificare în 2 pași prin **email real SMTP** și **SMS real**.
 
-You've got a blank canvas to work on from a git perspective as well. There's a single initial commit with the what you're seeing right now - where you go from here is up to you!
+## ⚡ START RAPID - UN SINGUR CLICK!
 
-Everything you do here is contained within this one codespace. There is no repository on GitHub yet. If and when you’re ready you can click "Publish Branch" and we’ll create your repository and push up your project. If you were just exploring then and have no further need for this code then you can simply delete your codespace and it's gone forever.
+**Pentru a porni aplicația complet configurată:**
 
-This project was bootstrapped for you with [Vite](https://vitejs.dev/).
+```bash
+# Start universal (funcționează pe orice sistem)
+npm run start-app
+```
+
+**SAU pentru sisteme specifice:**
+
+```bash
+# Unix/Linux/macOS
+./start-app.sh
+
+# Windows PowerShell  
+.\CLEAN_START.ps1
+```
+
+## 📚 Documentație Completă
+
+Pentru configurare detaliată, troubleshooting și opțiuni avansate:
+**👉 [SETUP-GUIDE.md](./SETUP-GUIDE.md)**
+
+### 🧹 Script de Curățare Automată
+
+Acest script **CLEAN_START.ps1** face următoarele automat:
+
+1. **Oprește toate procesele** Node.js, npm care pot ocupa porturile
+2. **Curață cache-ul** npm și fișierele temporare  
+3. **Verifică dependențele** și le instalează dacă lipsesc
+4. **Pornește DOAR 1 backend** pe portul 3001
+5. **Pornește DOAR 1 frontend** pe portul 3000
+6. **Rulează teste automate** pentru validare
+7. **Deschide browser-ul** automat la aplicație
+
+### 📋 Opțiuni Script
+
+```powershell
+# Pornire standard cu teste
+.\CLEAN_START.ps1
+
+# Pornire fără teste (mai rapid)
+.\CLEAN_START.ps1 -SkipTests
+
+# Pornire cu output detaliat
+.\CLEAN_START.ps1 -Verbose
+
+# Combinat
+.\CLEAN_START.ps1 -SkipTests -Verbose
+```
+
+### 🛑 Oprire Rapidă
+
+```powershell
+# Oprește toate procesele Node.js/npm
+Get-Process node,npm -ErrorAction SilentlyContinue | Stop-Process -Force
+```
+
+### 🔧 Servicii Reale Configurate
+
+- **📧 Email SMTP**: noreply@misedainspectsrl.ro (mail.misedainspectsrl.ro:465)
+- **📱 SMS API**: smsadvert.ro cu token JWT valid
+- **🔐 JWT Authentication**: Tokeni securizați pentru sesiuni
+- **📊 Database**: Stocare JSON pentru utilizatori
+
+### 🎯 Linkuri Aplicație
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
+- **Health Check**: http://localhost:3001/api/health
 
 ## Available Scripts
 
@@ -14,13 +80,11 @@ In the project directory, you can run:
 
 ### `npm start`
 
-We've already run this for you in the `Codespaces: server` terminal window below. If you need to stop the server for any reason you can just run `npm start` again to bring it back online.
-
 Runs the app in the development mode.\
-Open [http://localhost:3000/](http://localhost:3000/) in the built-in Simple Browser (`Cmd/Ctrl + Shift + P > Simple Browser: Show`) to view your running application.
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-The page will reload automatically when you make changes.\
-You may also see any lint errors in the console.
+The page will reload if you make edits.\
+You will also see any lint errors in the console.
 
 ### `npm test`
 
@@ -37,34 +101,18 @@ Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
+### `npm run eject`
+
+**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+
+If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+
+You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+
 ## Learn More
 
-You can learn more in the [Vite documentation](https://vitejs.dev/guide/).
-
-To learn Vitest, a Vite-native testing framework, go to [Vitest documentation](https://vitest.dev/guide/)
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://sambitsahoo.com/blog/vite-code-splitting-that-works.html](https://sambitsahoo.com/blog/vite-code-splitting-that-works.html)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://github.com/btd/rollup-plugin-visualizer#rollup-plugin-visualizer](https://github.com/btd/rollup-plugin-visualizer#rollup-plugin-visualizer)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://dev.to/hamdankhan364/simplifying-progressive-web-app-pwa-development-with-vite-a-beginners-guide-38cf](https://dev.to/hamdankhan364/simplifying-progressive-web-app-pwa-development-with-vite-a-beginners-guide-38cf)
-
-### Advanced Configuration
-
-This section has moved here: [https://vitejs.dev/guide/build.html#advanced-base-options](https://vitejs.dev/guide/build.html#advanced-base-options)
-
-### Deployment
-
-This section has moved here: [https://vitejs.dev/guide/build.html](https://vitejs.dev/guide/build.html)
-
-### Troubleshooting
-
-This section has moved here: [https://vitejs.dev/guide/troubleshooting.html](https://vitejs.dev/guide/troubleshooting.html)
