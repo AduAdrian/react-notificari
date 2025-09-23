@@ -13,8 +13,7 @@ const Dashboard: React.FC = () => {
     const { user, logout } = useAuth();
     const [clients, setClients] = useState<Client[]>([]);
     const [activeTab, setActiveTab] = useState('dashboard');
-    const [validity, setValidity] = useState('6 luni');
-    const [expirationDate, setExpirationDate] = useState('');
+    // Remove unused state variables - validity and expiration are handled in formData
     const [manualEdit, setManualEdit] = useState(false);
 
     const [formData, setFormData] = useState({
