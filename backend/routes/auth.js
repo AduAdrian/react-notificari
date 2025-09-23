@@ -304,8 +304,8 @@ router.post('/register', [
         .notEmpty()
         .withMessage('Numărul de telefon este obligatoriu'),
     body('password')
-        .isLength({ min: 6 })
-        .withMessage('Parola trebuie să aibă cel puțin 6 caractere'),
+        .isLength({ min: 8 })
+        .withMessage('Parola trebuie să aibă cel puțin 8 caractere'),
     body('confirmPassword')
         .custom((value, { req }) => {
             if (value !== req.body.password) {

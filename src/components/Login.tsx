@@ -33,8 +33,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onShowRegister }) => {
         // Validare parolă
         if (!formData.password) {
             newErrors.password = 'Parola este obligatorie';
-        } else if (formData.password.length < 6) {
-            newErrors.password = 'Parola trebuie să aibă cel puțin 6 caractere';
+        } else if (formData.password.length < 8) {
+            newErrors.password = 'Parola trebuie să aibă cel puțin 8 caractere';
         }
 
         setErrors(newErrors);

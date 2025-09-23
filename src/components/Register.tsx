@@ -70,8 +70,8 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onBackToLogin, o
         // Validare parolă
         if (!formData.password) {
             newErrors.password = 'Parola este obligatorie';
-        } else if (formData.password.length < 6) {
-            newErrors.password = 'Parola trebuie să aibă cel puțin 6 caractere';
+        } else if (formData.password.length < 8) {
+            newErrors.password = 'Parola trebuie să aibă cel puțin 8 caractere';
         } else if (!/[a-zA-Z]/.test(formData.password)) {
             newErrors.password = 'Parola trebuie să conțină cel puțin o literă';
         } else if (!/[0-9]/.test(formData.password)) {
