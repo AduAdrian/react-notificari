@@ -383,3 +383,37 @@
         min-width: 800px;
     }
 }
+
+/* Admin-specific styles for database simulation */
+.validity-select-admin {
+    background-color: #f7fafc;
+    color: #2d3748;
+    border: 2px solid #e2e8f0;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.validity-select-admin .predefined-option {
+    color: #a0aec0;
+    background-color: #f7fafc;
+    font-style: italic;
+}
+
+.validity-select-admin .manual-option {
+    color: #2d3748;
+    background-color: #fff;
+    font-weight: 600;
+    border-top: 1px solid #e2e8f0;
+}
+
+.manual-date-input {
+    border: 2px solid #667eea !important;
+    background-color: #fff;
+    color: #2d3748;
+}
+
+.manual-date-input:focus {
+    border-color: #5a67d8 !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}

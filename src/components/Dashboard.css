@@ -498,6 +498,47 @@
     left: 100%;
 }
 
+/* Styles for database simulation - greyed validity options */
+.validity-select {
+    background-color: #f7fafc;
+    color: #2d3748;
+    border: 2px solid #e2e8f0;
+}
+
+.validity-select .predefined-option {
+    color: #a0aec0;
+    background-color: #f7fafc;
+    font-style: italic;
+}
+
+.validity-select .manual-option {
+    color: #2d3748;
+    background-color: #fff;
+    font-weight: 600;
+    border-top: 1px solid #e2e8f0;
+}
+
+.validity-select:focus .predefined-option {
+    color: #718096;
+}
+
+.validity-select:focus .manual-option {
+    color: #667eea;
+    background-color: #edf2f7;
+}
+
+/* Manual date input styling */
+.form-group input[type="date"] {
+    border: 2px solid #667eea;
+    background-color: #fff;
+    color: #2d3748;
+}
+
+.form-group input[type="date"]:focus {
+    border-color: #5a67d8;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
 .add-button {
     background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
     color: white;
