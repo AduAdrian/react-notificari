@@ -4,12 +4,12 @@ const fetch = require('node-fetch');
 const database = require('../utils/database');
 const authUtils = require('../utils/auth');
 const verificationService = require('../utils/verification');
-const { 
-  checkBruteForce, 
-  recordFailedAttempt, 
-  resetFailedAttempts, 
-  SecurityLogger, 
-  validateInput 
+const {
+    checkBruteForce,
+    recordFailedAttempt,
+    resetFailedAttempts,
+    SecurityLogger,
+    validateInput
 } = require('../middleware/AuthMiddleware');
 
 const router = express.Router();
@@ -26,164 +26,164 @@ router.use(validateInput);
  * OWASP 4.5.3 - Role-based redirection
  */
 router.post('/login', [
-  body('email').isEmail().normalizeEmail().withMessage('Email invalid'),
-  body('password').isLength({ min: 8 }).withMessage('Parolă trebuie să aibă minim 8 caractere')
+    body('email').isEmail().normalizeEmail().withMessage('Email invalid'),
+    body('password').isLength({ min: 8 }).withMessage('Parolă trebuie să aibă minim 8 caractere')
 ], async (req, res) => {
-  try {
-    // Validare errori express-validator
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      SecurityLogger.logAuthAttempt(req.body.email || 'unknown', false, req.ip, req.get('user-agent'));
-      return res.status(400).json({
-        success: false,
-        errors: errors.array().map(err => err.msg)
-      });
+    try {
+        // Validare errori express-validator
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            SecurityLogger.logAuthAttempt(req.body.email || 'unknown', false, req.ip, req.get('user-agent'));
+            return res.status(400).json({
+                success: false,
+                errors: errors.array().map(err => err.msg)
+            });
+        }
+
+        const { email, password, rememberMe } = req.body;
+
+        // OWASP 4.4.3 - Verifică protecția împotriva brute force
+        const bruteForceCheck = checkBruteForce(email, req.ip);
+        if (bruteForceCheck.blocked) {
+            SecurityLogger.logSuspiciousActivity(email, 'BRUTE_FORCE_BLOCKED', {
+                ip: req.ip,
+                remainingTime: bruteForceCheck.remainingTime
+            });
+
+            return res.status(429).json({
+                success: false,
+                error: bruteForceCheck.message,
+                lockoutDuration: bruteForceCheck.remainingTime,
+                retryAfter: bruteForceCheck.remainingTime
+            });
+        }
+
+        // Caută utilizatorul în database
+        const user = database.getUserByEmail(email);
+
+        if (!user) {
+            recordFailedAttempt(email, req.ip);
+            SecurityLogger.logAuthAttempt(email, false, req.ip, req.get('user-agent'));
+            return res.status(401).json({
+                success: false,
+                error: 'Email sau parolă incorectă.'
+            });
+        }
+
+        // Verifică parola
+        const isPasswordValid = await authUtils.comparePassword(password, user.password);
+
+        if (!isPasswordValid) {
+            recordFailedAttempt(email, req.ip);
+            SecurityLogger.logAuthAttempt(email, false, req.ip, req.get('user-agent'));
+            return res.status(401).json({
+                success: false,
+                error: 'Email sau parolă incorectă.'
+            });
+        }
+
+        // Verifică dacă contul este verificat
+        if (!user.isVerified) {
+            SecurityLogger.logAuthAttempt(email, false, req.ip, req.get('user-agent'));
+            return res.status(403).json({
+                success: false,
+                error: 'Contul nu este verificat. Verifică email-ul sau SMS-ul.',
+                requiresVerification: true
+            });
+        }
+
+        // Reset failed attempts după login reușit
+        resetFailedAttempts(email, req.ip);
+
+        // Generează JWT token
+        const tokenPayload = {
+            userId: user.id,
+            email: user.email,
+            name: `${user.firstName} ${user.lastName}`.trim(),
+            role: user.role || 'client' // Default role client
+        };
+
+        const token = authUtils.generateToken(tokenPayload);
+
+        // OWASP 4.5.3 - Role-based redirection
+        let redirectUrl;
+        let accessLevel;
+
+        if (user.role === 'admin') {
+            redirectUrl = '/admin/cpanel';
+            accessLevel = 'Acces complet CPanel administrativ';
+        } else {
+            redirectUrl = '/client/schedule-menu';
+            accessLevel = 'Acces la meniul personal de programări';
+        }
+
+        SecurityLogger.logAuthAttempt(email, true, req.ip, req.get('user-agent'));
+        SecurityLogger.logRoleAccess(user.id, user.role, '/login', true, req.ip);
+
+        // Set remember me cookie dacă este cerut
+        if (rememberMe) {
+            const rememberToken = authUtils.generateRememberToken(user.id);
+            res.cookie('remember_token', rememberToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 30 * 24 * 60 * 60 * 1000 // 30 zile
+            });
+        }
+
+        res.json({
+            success: true,
+            message: `Autentificare reușită! ${accessLevel}`,
+            token,
+            user: {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                role: user.role || 'client'
+            },
+            redirectTo: redirectUrl,
+            accessLevel,
+            permissions: user.role === 'admin' ? [
+                'manage_users',
+                'view_all_schedules',
+                'system_settings',
+                'cpanel_access',
+                'security_logs'
+            ] : [
+                'view_own_schedule',
+                'add_schedule',
+                'edit_own_profile',
+                'view_own_notifications'
+            ]
+        });
+
+    } catch (error) {
+        console.error('Eroare login:', error);
+        SecurityLogger.logSuspiciousActivity(req.body?.email || 'unknown', 'LOGIN_ERROR', {
+            error: error.message,
+            ip: req.ip
+        });
+
+        res.status(500).json({
+            success: false,
+            error: 'Eroare internă de server.'
+        });
     }
-    
-    const { email, password, rememberMe } = req.body;
-    
-    // OWASP 4.4.3 - Verifică protecția împotriva brute force
-    const bruteForceCheck = checkBruteForce(email, req.ip);
-    if (bruteForceCheck.blocked) {
-      SecurityLogger.logSuspiciousActivity(email, 'BRUTE_FORCE_BLOCKED', {
-        ip: req.ip,
-        remainingTime: bruteForceCheck.remainingTime
-      });
-      
-      return res.status(429).json({
-        success: false,
-        error: bruteForceCheck.message,
-        lockoutDuration: bruteForceCheck.remainingTime,
-        retryAfter: bruteForceCheck.remainingTime
-      });
-    }
-    
-    // Caută utilizatorul în database
-    const user = database.getUserByEmail(email);
-    
-    if (!user) {
-      recordFailedAttempt(email, req.ip);
-      SecurityLogger.logAuthAttempt(email, false, req.ip, req.get('user-agent'));
-      return res.status(401).json({
-        success: false,
-        error: 'Email sau parolă incorectă.'
-      });
-    }
-    
-    // Verifică parola
-    const isPasswordValid = await authUtils.comparePassword(password, user.password);
-    
-    if (!isPasswordValid) {
-      recordFailedAttempt(email, req.ip);
-      SecurityLogger.logAuthAttempt(email, false, req.ip, req.get('user-agent'));
-      return res.status(401).json({
-        success: false,
-        error: 'Email sau parolă incorectă.'
-      });
-    }
-    
-    // Verifică dacă contul este verificat
-    if (!user.isVerified) {
-      SecurityLogger.logAuthAttempt(email, false, req.ip, req.get('user-agent'));
-      return res.status(403).json({
-        success: false,
-        error: 'Contul nu este verificat. Verifică email-ul sau SMS-ul.',
-        requiresVerification: true
-      });
-    }
-    
-    // Reset failed attempts după login reușit
-    resetFailedAttempts(email, req.ip);
-    
-    // Generează JWT token
-    const tokenPayload = {
-      userId: user.id,
-      email: user.email,
-      name: `${user.firstName} ${user.lastName}`.trim(),
-      role: user.role || 'client' // Default role client
-    };
-    
-    const token = authUtils.generateToken(tokenPayload);
-    
-    // OWASP 4.5.3 - Role-based redirection
-    let redirectUrl;
-    let accessLevel;
-    
-    if (user.role === 'admin') {
-      redirectUrl = '/admin/cpanel';
-      accessLevel = 'Acces complet CPanel administrativ';
-    } else {
-      redirectUrl = '/client/schedule-menu';  
-      accessLevel = 'Acces la meniul personal de programări';
-    }
-    
-    SecurityLogger.logAuthAttempt(email, true, req.ip, req.get('user-agent'));
-    SecurityLogger.logRoleAccess(user.id, user.role, '/login', true, req.ip);
-    
-    // Set remember me cookie dacă este cerut
-    if (rememberMe) {
-      const rememberToken = authUtils.generateRememberToken(user.id);
-      res.cookie('remember_token', rememberToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 zile
-      });
-    }
-    
-    res.json({
-      success: true,
-      message: `Autentificare reușită! ${accessLevel}`,
-      token,
-      user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role || 'client'
-      },
-      redirectTo: redirectUrl,
-      accessLevel,
-      permissions: user.role === 'admin' ? [
-        'manage_users',
-        'view_all_schedules',
-        'system_settings',
-        'cpanel_access',
-        'security_logs'
-      ] : [
-        'view_own_schedule',
-        'add_schedule', 
-        'edit_own_profile',
-        'view_own_notifications'
-      ]
-    });
-    
-  } catch (error) {
-    console.error('Eroare login:', error);
-    SecurityLogger.logSuspiciousActivity(req.body?.email || 'unknown', 'LOGIN_ERROR', {
-      error: error.message,
-      ip: req.ip
-    });
-    
-    res.status(500).json({
-      success: false,
-      error: 'Eroare internă de server.'
-    });
-  }
 });
 
 // GitHub OAuth endpoint (enhanced cu role detection)
 router.post('/github', async (req, res) => {
     try {
         const { code } = req.body;
-        
+
         if (!code) {
             return res.status(400).json({
                 success: false,
                 message: 'Cod de autorizare lipsă'
             });
         }
-        
+
         // Schimbăm codul pentru access token
         const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
             method: 'POST',
@@ -197,16 +197,16 @@ router.post('/github', async (req, res) => {
                 code: code
             })
         });
-        
+
         const tokenData = await tokenResponse.json();
-        
+
         if (tokenData.error) {
             return res.status(400).json({
                 success: false,
                 message: 'Eroare la obținerea token-ului GitHub'
             });
         }
-        
+
         // Obținem datele utilizatorului de la GitHub
         const userResponse = await fetch('https://api.github.com/user', {
             headers: {
@@ -214,9 +214,9 @@ router.post('/github', async (req, res) => {
                 'User-Agent': 'React-Notificari-App'
             }
         });
-        
+
         const githubUser = await userResponse.json();
-        
+
         // Obținem email-ul (poate fi privat)
         const emailResponse = await fetch('https://api.github.com/user/emails', {
             headers: {
@@ -224,20 +224,20 @@ router.post('/github', async (req, res) => {
                 'User-Agent': 'React-Notificari-App'
             }
         });
-        
+
         const emails = await emailResponse.json();
         const primaryEmail = emails.find(email => email.primary && email.verified);
-        
+
         if (!primaryEmail) {
             return res.status(400).json({
                 success: false,
                 message: 'Nu s-a găsit un email verificat în contul GitHub'
             });
         }
-        
+
         // Verificăm dacă utilizatorul există deja
         let user = database.getUserByEmail(primaryEmail.email);
-        
+
         if (!user) {
             // Creăm un utilizator nou
             const newUser = {
@@ -252,7 +252,7 @@ router.post('/github', async (req, res) => {
                 githubId: githubUser.id,
                 createdAt: new Date().toISOString()
             };
-            
+
             user = database.addUser(newUser);
         } else {
             // Actualizăm GitHub ID-ul dacă nu există
@@ -261,10 +261,10 @@ router.post('/github', async (req, res) => {
                 database.updateUser(user.id, user);
             }
         }
-        
+
         // Generăm JWT token
         const token = authUtils.generateToken(user.id);
-        
+
         res.json({
             success: true,
             message: 'Autentificare cu GitHub reușită',
@@ -276,7 +276,7 @@ router.post('/github', async (req, res) => {
                 verificationMethod: user.verificationMethod
             }
         });
-        
+
     } catch (error) {
         console.error('Eroare GitHub OAuth:', error);
         res.status(500).json({

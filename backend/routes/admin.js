@@ -16,53 +16,53 @@ router.use(requireAdmin);
  * OWASP 4.5.3 - Privilege separation implementation
  */
 router.get('/cpanel', (req, res) => {
-  try {
-    SecurityLogger.logRoleAccess(req.user.userId, 'admin', '/cpanel', true, req.ip);
-    
-    const db = database.read();
-    const stats = {
-      totalUsers: db.users.length,
-      activeUsers: db.users.filter(u => u.isActive).length,
-      verifiedUsers: db.users.filter(u => u.isVerified).length,
-      pendingUsers: db.pendingUsers.length,
-      adminUsers: db.users.filter(u => u.role === 'admin').length,
-      totalClients: (db.clients || []).length,
-      totalVehicles: (db.vehicles || []).length
-    };
-    
-    res.json({
-      access: 'full',
-      role: 'admin',
-      permissions: [
-        'manage_users',
-        'view_all_schedules',
-        'system_settings',
-        'cpanel_access',
-        'security_logs',
-        'manage_notifications'
-      ],
-      cpanelUrl: '/admin/dashboard',
-      redirectTo: '/admin/cpanel',
-      user: {
-        id: req.user.userId,
-        email: req.user.email,
-        name: req.user.name,
-        role: 'admin'
-      },
-      dashboardStats: stats,
-      message: 'Acces CPanel acordat pentru administrator'
-    });
-    
-  } catch (error) {
-    console.error('Eroare accesare CPanel:', error);
-    SecurityLogger.logSuspiciousActivity(req.user?.userId, 'CPANEL_ACCESS_ERROR', {
-      error: error.message,
-      ip: req.ip
-    });
-    res.status(500).json({ 
-      error: 'Eroare internă la accesarea CPanel-ului.' 
-    });
-  }
+    try {
+        SecurityLogger.logRoleAccess(req.user.userId, 'admin', '/cpanel', true, req.ip);
+
+        const db = database.read();
+        const stats = {
+            totalUsers: db.users.length,
+            activeUsers: db.users.filter(u => u.isActive).length,
+            verifiedUsers: db.users.filter(u => u.isVerified).length,
+            pendingUsers: db.pendingUsers.length,
+            adminUsers: db.users.filter(u => u.role === 'admin').length,
+            totalClients: (db.clients || []).length,
+            totalVehicles: (db.vehicles || []).length
+        };
+
+        res.json({
+            access: 'full',
+            role: 'admin',
+            permissions: [
+                'manage_users',
+                'view_all_schedules',
+                'system_settings',
+                'cpanel_access',
+                'security_logs',
+                'manage_notifications'
+            ],
+            cpanelUrl: '/admin/dashboard',
+            redirectTo: '/admin/cpanel',
+            user: {
+                id: req.user.userId,
+                email: req.user.email,
+                name: req.user.name,
+                role: 'admin'
+            },
+            dashboardStats: stats,
+            message: 'Acces CPanel acordat pentru administrator'
+        });
+
+    } catch (error) {
+        console.error('Eroare accesare CPanel:', error);
+        SecurityLogger.logSuspiciousActivity(req.user?.userId, 'CPANEL_ACCESS_ERROR', {
+            error: error.message,
+            ip: req.ip
+        });
+        res.status(500).json({
+            error: 'Eroare internă la accesarea CPanel-ului.'
+        });
+    }
 });
 
 // GET /admin/dashboard - Dashboard principal admin (păstrat pentru compatibilitate)

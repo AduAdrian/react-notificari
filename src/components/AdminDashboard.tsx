@@ -15,23 +15,23 @@ interface Client {
 }
 
 interface AdminDashboardProps {
-  cpanelAccess?: boolean;
-  fullPermissions?: boolean;
+    cpanelAccess?: boolean;
+    fullPermissions?: boolean;
 }
 
 interface DashboardStats {
-  totalUsers: number;
-  activeUsers: number;
-  verifiedUsers: number;
-  pendingUsers: number;
-  adminUsers: number;
-  totalClients: number;
-  totalVehicles: number;
+    totalUsers: number;
+    activeUsers: number;
+    verifiedUsers: number;
+    pendingUsers: number;
+    adminUsers: number;
+    totalClients: number;
+    totalVehicles: number;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
-  cpanelAccess = true, 
-  fullPermissions = true 
+const AdminDashboard: React.FC<AdminDashboardProps> = ({
+    cpanelAccess = true,
+    fullPermissions = true
 }) => {
     const { user, token, logout } = useAuth();
     const [clients, setClients] = useState<Client[]>([]);
